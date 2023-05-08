@@ -1,0 +1,7 @@
+# VENV
+bums/
+env/
+#Mac Shit
+.DS_Store
+#.py
+__pycache__/
