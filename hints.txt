@@ -1,0 +1,16 @@
+# fill between to lines
+fillPoly()
+# change color of picture 
+= cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+= cv2.dilate(bw ,np.ones((3,3)), iterations=4) #4
+                
+nr, labels = cv2.connectedComponents(gradmag_w)
+plt.imshow(labels == 0) #labels==1 streifen
+
+
+
+cnts, hierachy = cv2.findContours(gradmag_w, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+out = cv2.merge((img, img, img))
+cv2.drawContours(out, cnts, -1, [255,0,0], 2)
+plt.imshow(out)
