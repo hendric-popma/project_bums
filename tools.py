@@ -30,3 +30,6 @@ def read_video_frames(video_path):
     cap.release()
 
     return frame_list
+
+
+#TODO CONVERT FRAMES TO GRAYSCALE 
