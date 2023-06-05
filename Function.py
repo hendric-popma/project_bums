@@ -1,4 +1,4 @@
-import numpy as np 
+import numpy as np
 import cv2
 import matplotlib.pyplot as plt 
 
@@ -109,6 +109,33 @@ def seg_largest_component(image):
     #plt.imshow(img_largest_2)
 
     img_out = cv2.dilate(img_largest_2.astype('uint8'), np.ones((3,3)), iterations= iterations_2*2)
+
+    return img_out
+
+#%%
+def seg_orientation_lines(image, color):
+    '''
+    segmentiert aus einem Imput Bild die Ortientierungslinien
+    Output: bw_image with contours of orientation lines
+    '''
+    img_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    plt.gray()
+
+    #Gauss für bessere Ergebnisse bei finde thresh
+    img_blur = cv2.GaussianBlur(img_gray, (5,5), 0)
+
+    #color = "w"   #Farbe der Orientierungslinie wählen: w für weiß und s für schwarz
+    img_b_or_w = white_or_black(img_blur, color)
+
+    thresh_1, thresh_2 = find_thresh(img_b_or_w, 0.13)  # oberen möglichen 13% ab maximalem Grauwert
+
+    print("1:", thresh_1)
+    print("2:", thresh_2)
+
+    t, seg = cv2.threshold(img_b_or_w,thresh_2,255,cv2.THRESH_BINARY)
+
+    #segmentiert das größe zusammenhängende Objekt 
+    img_out = seg_largest_component(seg)
 
     return img_out
 
