@@ -170,12 +170,28 @@ def seg_orientation_lines(image, color, percentage):
             img_b_or_w = 255 - img_blur
         else:
             raise ValueError("Invalid color selection. Valid options are B for Black or W for White")
+        
+    
+    #Oberes vietrl des Bildes schwärzen
+    h = img_b_or_w.shape[0]
+    w = img_b_or_w.shape[1]
+    print(h)
+    region = 1/5
+    top_region = img_b_or_w[0:int(h*region), :]  # Obere 1/4 des Bildes auswählen
+
+    # Schwärze den ausgewählten Bereich
+    top_region = np.zeros_like(top_region)
+
+    # Füge den geschwärzten Bereich wieder in das ursprüngliche Bild ein
+    #img_b_or_w_new = np.copy(img_b_or_w)
+    img_b_or_w[0:int(h*region), :] = top_region
+
 
     #thresh_1, thresh_2 = find_thresh(img_b_or_w, 0.13)  # oberen möglichen 13% ab maximalem Grauwert
-    h = img_b_or_w.shape[1]
+    #h = img_b_or_w.shape[1]
     all_grayscale_values = []
     
-    for y in range(int(h/2), int(h-1), int(h/16)):
+    for y in range(int(w/2), int(w-1), int(w/8)):
         gray_values, x_values = grayscale_values(img_b_or_w, y)
         all_grayscale_values.extend(gray_values)
 
@@ -201,19 +217,20 @@ def seg_orientation_lines(image, color, percentage):
 
     t, seg = cv2.threshold(img_b_or_w,threshold_1,255,cv2.THRESH_BINARY)
 
+
     #segmentiert das größe zusammenhängende Objekt
     # Erstelle ein Bild, das nur das größte zusammenhängende Element enthält
     if color == "W":
         iterations_1 = 7
     else:
         if color == "B":
-            iterations_1 = 2
+            iterations_1 = 3
         else:
             raise ValueError("Invalid color selection. Valid options are B for Black or W for White")
 
 
-    img_dilate = cv2.dilate(seg.astype('uint8'), np.ones((3,3)), iterations_1)
-    #plt.imshow(img_dilate)
+    img_dilate = cv2.dilate(seg.astype('uint8'), np.ones((3,3)), iterations = iterations_1)
+    #plt.imshow(seg)
 
     img_largest = find_largest_component(img_dilate)
     #plt.imshow(img_largest)
@@ -224,19 +241,19 @@ def seg_orientation_lines(image, color, percentage):
         iterations_2 = 7
     else:
         if color == "B":
-            iterations_2 = 10
+            iterations_2 = 7
         else:
             raise ValueError("Invalid color selection. Valid options are B for Black or W for White")
 
-    img_erode = cv2.erode(img_largest.astype('uint8'), np.ones((3,3)), iterations=iterations_2)
+    img_erode = cv2.erode(img_largest.astype('uint8'), np.ones((3,3)), iterations = iterations_2)
     #plt.imshow(img_erode)
 
     img_largest_2 = find_largest_component(img_erode)
     #plt.imshow(img_largest_2)
 
-    img_out = cv2.dilate(img_largest_2.astype('uint8'), np.ones((3,3)), iterations= iterations_2*int(1.5))
+    img_out = cv2.dilate(img_largest_2.astype('uint8'), np.ones((3,3)), iterations = int(iterations_2*1.5))
 
-    return img_out
+    return seg      #img_out
 
 #%%
 def read_video_frames(video_path):
