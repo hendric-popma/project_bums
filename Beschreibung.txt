@@ -1,0 +1,10 @@
+Beschreibung
+
+
+
+Probleme Segmentierung:
+
+Untersuchte Methoden:
+-Canny mit Houthlines
+-Canny mit searchline
+-selbst geschriebenenr automatischer thresh (way to go)
