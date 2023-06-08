@@ -5,17 +5,12 @@ from tools import *
 plt.gray()
 
 # Open the video file
-video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/kempten1.MOV")
+video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/kempten2.MOV")
 
 # Check if the video file was successfully opened
 if not video.isOpened():
     print("Error opening video file.")
 
-# Get video properties
-fps = video.get(cv2.CAP_PROP_FPS)
-frame_width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
-frame_height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
 # Create VideoWriter object to save the modified frames
 #output = cv2.VideoWriter('output.mp4', cv2.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
@@ -24,7 +19,7 @@ total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 c = 0
 save_cnts = 0
 wait = 0
-while video.isOpened() and c < 300:
+while video.isOpened():# and c < 300:
     # Read a single frame
     ret, frame = video.read()
 
@@ -36,6 +31,8 @@ while video.isOpened() and c < 300:
     
     img_thresh = thresh_gauss(frame)
     img_cont = find_max_contour(img_thresh)
+
+    #img_cont = seg_orientation_lines(frame, "W")
     # cut image in half 
     #cut = 1000
 
@@ -53,26 +50,30 @@ while video.isOpened() and c < 300:
     canny = cv2.Canny(img_line, 0, 0)
     
     img_cut = img_line.copy()
-    one = canny[frame.shape[1]-10,:] > 0
+    one = canny[frame.shape[0]-10,:] > 0
+    #one = canny[1910,:] > 0
     ### video2
     #one = canny[1070,:] > 0
 
     #xposition where img is white at bottom
     on = np.where(one==True)
+    print(len(on[0]))
     #dist = abs(on[0][0]-on[0][3])
 
     #check that line has diff to edge in percent at the moment 10%
     #TODO make functions and TEST IT!!!
+    #TODO
     dist_min = frame.shape[0]*0.1
-    if on[0][0] > dist_min and on[0][-1] < frame.shape[0]-dist_min:
+    #print(on[0])
+    if len(on) >= 2 and on[0][0] > dist_min and on[0][-1] < (frame.shape[0]-dist_min):
         #make black in line 
         img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
         #in half make black
         img_cut[:700,:] = 0
         #plt.imshow(img_cut)
     else: 
-        offset_line_canny = int(frame.shape[1] * 0.2)
-        one = canny[frame.shape[1]-offset_line_canny,:] > 0
+        offset_line_canny = int(frame.shape[0] * 0.2) #for horizontal video offset 0.8
+        one = canny[frame.shape[0]-offset_line_canny,:] > 0
         on = np.where(one==True)
         img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
         #in half make black
@@ -124,22 +125,13 @@ while video.isOpened() and c < 300:
                 print("left and right")
 
     c = c+1
-    # Display the modified frame
     #print(c)
     cv2.imshow('Modified Frame', new)
-
-    # Save the modified frame to the output video
-    #output.write(gray_frame)
 
     # Check for key press to exit
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-    # Break the loop when all frames have been processed
-    if video.get(cv2.CAP_PROP_POS_FRAMES) == total_frames:
-        break   
-
 # Release the video objects and close the windows
 video.release()
-#output.release()
 cv2.destroyAllWindows()
