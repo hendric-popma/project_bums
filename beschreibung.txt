@@ -1,0 +1,7 @@
+Was haben wir bisher alles probiert.
+
+Canny houghlinesP und Schnittpunkt 
+Skeletonize 
+
+
+Probleme: 
