@@ -12,9 +12,6 @@ if not video.isOpened():
     print("Error opening video file.")
 
 
-# Create VideoWriter object to save the modified frames
-#output = cv2.VideoWriter('output.mp4', cv2.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
-
 # Read and process the video frames
 c = 0
 save_cnts = 0
