@@ -5,7 +5,8 @@ from tools import *
 plt.gray()
 
 # Open the video file
-video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/kempten1.MOV")
+#video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/kempten1.MOV")
+video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/muenchen2.mp4")
 
 # Check if the video file was successfully opened
 if not video.isOpened():
@@ -29,16 +30,22 @@ while video.isOpened():# and c < 300:
     #img_thresh = thresh_gauss(frame)
     #img_cont = find_max_contour(img_thresh)
 
-    img_cont = seg_orientation_lines(frame, "W")
-    # cut image in half 
-    #cut = 1000
-
-    cut = int(4/5 * frame.shape[0])
+    img_cont = seg_orientation_lines(frame, "B")
+    
+    
+    #TODO chekc if necessary
+    cut = int(3/5 * frame.shape[0])
     black_up = img_cont[:cut,:]
     black_down = img_cont[cut:,:]
     #find center of both halfs
     c_black_up, koords_up = find_center_plot(black_up)
     c_black_down, koords_down = find_center_plot(black_down)
+    if koords_up == [int(val/2) for val in list(frame.shape[:2])]:
+        koords_up = koords[0]
+    if koords_down == [int(val/2) for val in list(frame.shape[:2])]:
+        koords_down = koords[1]
+    
+    
     # concatenate both halfs
     c_new = np.concatenate((c_black_up, c_black_down))
     # make line through middle 
@@ -48,43 +55,42 @@ while video.isOpened():# and c < 300:
     
     img_cut = img_line.copy()
     one = canny[frame.shape[0]-10,:] > 0
+
     #one = canny[1910,:] > 0
     ### video2
     #one = canny[1070,:] > 0
 
     #xposition where img is white at bottom
     on = np.where(one==True)
-
     #dist = abs(on[0][0]-on[0][3])
 
     #check that line has diff to edge in percent at the moment 10%
     #TODO make functions and TEST IT!!!
     
     dist_min = frame.shape[0]*0.1
-    #print(on[0])
-    if len(on) >= 2 and on[0][0] > dist_min and on[0][-1] < (frame.shape[0]-dist_min):
+    if len(on[0]) >= 2 and on[0][0] > dist_min and on[0][-1] < (frame.shape[0]-dist_min):
         #make black in line 
         img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
         #in half make black
-        img_cut[:700,:] = 0
+        img_cut[:int(frame.shape[0]/2),:] = 0
         #plt.imshow(img_cut)
     else: 
+
         offset_line_canny = int(frame.shape[0] * 0.2) #for horizontal video offset 0.8
-        print(c)
         ycheck = frame.shape[0]-offset_line_canny
         # put y position up as long there is no white space found
-        while len(on) == 0:
+        while len(on[0]) == 0:
             one = canny[ycheck,:] > 0
             on = np.where(one==True)
-            img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
-            #in half make black
-            img_cut[:700,:] = 0
             #plt.imshow(img_cut)
-            ycheck = ycheck - offset_line_canny
+            ycheck = ycheck - offset_line_canny  
+        img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
+        #in half make black
+        img_cut[:int(frame.shape[0]/2),:] = 0
 
     cnts,_ = cv2.findContours(img_cut, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     # when cnts come in picture wait bevor findcontours so that contour is in complete picture solved
-    
+    img_cnts = cv2.drawContours(img_cut,cnts, -1, [255,0,0], 10)
     if len(cnts) == 0 and save_cnts == 0: 
         wait = 0
     if len(cnts) > 0 and save_cnts == 0: 
@@ -94,6 +100,7 @@ while video.isOpened():# and c < 300:
     save_cnts = len(cnts) #save for next while step
     
     new = cv2.merge((img_line, img_line, img_line))
+    #print(wait)
     if wait > 2:
         
         cnts_idx = []
@@ -113,17 +120,26 @@ while video.isOpened():# and c < 300:
             new = cv2.circle(new,cent,10, [255,0,0], cv2.FILLED)
             koords_hor.append(cent)
         #plt.imshow(new)
+        output = []
         if len(koords_hor) == 1:
             if koords_hor[0][0] < (koords[0][0]+koords[1][0])/2:
                 print("left")
+                #left is one
+                output.append(1)
             if koords_hor[0][0] > (koords[0][0]+koords[1][0])/2:
                 print("right")
+                #rigth is two
+                output.append(2)
         elif len(koords_hor) == 2:
             #TODO check position of the cnts 
             if koords_hor[0][0] < (koords[0][0]+koords[1][0])/2 and koords_hor[1][0] > (koords[0][0]+koords[1][0])/2:
                 print("left and right")
+                #left and right is 3
+                output.append(3)
             elif koords_hor[1][0] < (koords[0][0]+koords[1][0])/2 and koords_hor[0][0] > (koords[0][0]+koords[1][0])/2:
                 print("left and right")
+                #left and right is 3
+                output.append(3)
 
     c = c+1
     #print(c)
