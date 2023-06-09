@@ -59,7 +59,7 @@ while video.isOpened():# and c < 300:
 
     #check that line has diff to edge in percent at the moment 10%
     #TODO make functions and TEST IT!!!
-    #TODO
+    
     dist_min = frame.shape[0]*0.1
     #print(on[0])
     if len(on) >= 2 and on[0][0] > dist_min and on[0][-1] < (frame.shape[0]-dist_min):
