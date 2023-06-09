@@ -141,7 +141,7 @@ def seg_orientation_lines(image, color):
         #segmentiert das größe zusammenhängende Objekt
         # Erstelle ein Bild, das nur das größte zusammenhängende Element enthält
         if color == "W":
-            iterations_1 = 3
+            iterations_1 = 7
         else:
             if color == "B":
                 iterations_1 = 4
@@ -169,11 +169,13 @@ def seg_orientation_lines(image, color):
     #img_b_or_w = white_or_black(img_blur, color)
     if color == "W":
         img_b_or_w = img_blur
-        percentage = 0.19
+        percentage = 0.2
+        seg_min = 24000
     else:
         if color == "B":
             img_b_or_w = 255 - img_blur
             percentage = 0.235
+            seg_min = 31000
         else:
             raise ValueError("Invalid color selection. Valid options are B for Black or W for White")
         
@@ -213,53 +215,31 @@ def seg_orientation_lines(image, color):
     index_1 = int(num_values * thresh_percent)  # Index für den 13% Punkt
     threshold_2 = int(max_gray - (max_gray*percentage))
 
-
     threshold_1 = sorted_values[index_1]
-
 
 
 
     img_largest = seg_dilate_lagrestcomp(img_b_or_w, thresh = threshold_2)
 
-    # t, seg = cv2.threshold(img_b_or_w,threshold_2,255,cv2.THRESH_BINARY)
-
-
-    # #segmentiert das größe zusammenhängende Objekt
-    # # Erstelle ein Bild, das nur das größte zusammenhängende Element enthält
-    # if color == "W":
-    #     iterations_1 = 7
-    # else:
-    #     if color == "B":
-    #         iterations_1 = 4
-    #     else:
-    #         raise ValueError("Invalid color selection. Valid options are B for Black or W for White")
-
-
-    # img_dilate = cv2.dilate(seg.astype('uint8'), np.ones((3,3)), iterations = iterations_1)
-    # #plt.imshow(seg)
-
-    # img_largest = find_largest_component(img_dilate)
-    # #plt.imshow(img_largest)
-
     #TODO: Wenn seg Fläche kleiner Grenzwert ( ca. 30.000), dann nochmal mit thresh_1 statt thresh_2
-    # white_pixels = cv2.countNonZero(img_largest)
-    # if white_pixels <= 30.000:
-    #     img_largest_correct = seg_dilate_lagrestcomp(img_b_or_w, thresh=threshold_1)
-    # else:
-    #     img_largest_correct = img_largest
+    white_pixels = cv2.countNonZero(img_largest)
+    if white_pixels <= seg_min:
+        img_largest_correct = seg_dilate_lagrestcomp(img_b_or_w, thresh=threshold_1)
+    else:
+        img_largest_correct = img_largest
 
 
     #Um evtl. falsch verbundene Komponenten zu entfernen nocheinmal erode, find_largest_component, dilate
-    iterations_2 = 7
+    #iterations_2 = 9
     if color == "W":
-        iterations_2 = 5
+        iterations_2 = 9
     else:
         if color == "B":
             iterations_2 = 5
         else:
             raise ValueError("Invalid color selection. Valid options are B for Black or W for White")
 
-    img_erode = cv2.erode(img_largest.astype('uint8'), np.ones((3,3)), iterations = iterations_2)
+    img_erode = cv2.erode(img_largest_correct.astype('uint8'), np.ones((3,3)), iterations = iterations_2)
     #plt.imshow(img_erode)
 
     img_largest_2 = find_largest_component(img_erode)

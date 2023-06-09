@@ -5,7 +5,7 @@ from tools import *
 plt.gray()
 
 # Open the video file
-video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/kempten2.MOV")
+video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/kempten1.MOV")
 
 # Check if the video file was successfully opened
 if not video.isOpened():
@@ -29,10 +29,10 @@ while video.isOpened():# and c < 300:
 
     # Perform frame modification (example: convert to grayscale)
     
-    img_thresh = thresh_gauss(frame)
-    img_cont = find_max_contour(img_thresh)
+    #img_thresh = thresh_gauss(frame)
+    #img_cont = find_max_contour(img_thresh)
 
-    #img_cont = seg_orientation_lines(frame, "W")
+    img_cont = seg_orientation_lines(frame, "W")
     # cut image in half 
     #cut = 1000
 
@@ -57,7 +57,7 @@ while video.isOpened():# and c < 300:
 
     #xposition where img is white at bottom
     on = np.where(one==True)
-    print(len(on[0]))
+
     #dist = abs(on[0][0]-on[0][3])
 
     #check that line has diff to edge in percent at the moment 10%
@@ -73,13 +73,17 @@ while video.isOpened():# and c < 300:
         #plt.imshow(img_cut)
     else: 
         offset_line_canny = int(frame.shape[0] * 0.2) #for horizontal video offset 0.8
-        one = canny[frame.shape[0]-offset_line_canny,:] > 0
-        on = np.where(one==True)
-        img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
-        #in half make black
-        img_cut[:700,:] = 0
-        #plt.imshow(img_cut)
-
+        print(c)
+        ycheck = frame.shape[0]-offset_line_canny
+        # put y position up as long there is no white space found
+        while len(on) == 0:
+            one = canny[ycheck,:] > 0
+            on = np.where(one==True)
+            img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
+            #in half make black
+            img_cut[:700,:] = 0
+            #plt.imshow(img_cut)
+            ycheck = ycheck - offset_line_canny
 
     cnts,_ = cv2.findContours(img_cut, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     # when cnts come in picture wait bevor findcontours so that contour is in complete picture solved
