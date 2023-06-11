@@ -115,7 +115,7 @@ def seg_largest_component(image):
     return img_out
 
 #%%
-def seg_orientation_lines(image, color, percentage):
+def seg_orientation_lines(image, color, percentage_white = 0.2, percentage_black = 0.235):
     '''
     segmentiert aus einem Imput Bild die Ortientierungslinien
     Output: bw_image with contours of orientation lines
@@ -154,22 +154,22 @@ def seg_orientation_lines(image, color, percentage):
         return largest_component_image
     
 
-    def seg_dilate_lagrestcomp (image, thresh):
+    def seg_dilate_lagrestcomp (image, thresh, iterations):
         
         t, seg = cv2.threshold(image,thresh,255,cv2.THRESH_BINARY)
 
         #segmentiert das größe zusammenhängende Objekt
         # Erstelle ein Bild, das nur das größte zusammenhängende Element enthält
-        if color == "W":
-            iterations_1 = 7
-        else:
-            if color == "B":
-                iterations_1 = 4
-            else:
-                raise ValueError("Invalid color selection. Valid options are B for Black or W for White")
+        # if color == "W":
+        #     iterations_1 = 7
+        # else:
+        #     if color == "B":
+        #         iterations_1 = 4
+        #     else:
+        #         raise ValueError("Invalid color selection. Valid options are B for Black or W for White")
 
 
-        img_dilate = cv2.dilate(seg.astype('uint8'), np.ones((3,3)), iterations = iterations_1)
+        img_dilate = cv2.dilate(seg.astype('uint8'), np.ones((3,3)), iterations = iterations)
         #plt.imshow(seg)
 
         img_largest = find_largest_component(img_dilate)
@@ -189,13 +189,17 @@ def seg_orientation_lines(image, color, percentage):
     #img_b_or_w = white_or_black(img_blur, color)
     if color == "W":
         img_b_or_w = img_blur
-        ##percentage = 0.2
+        percentage = percentage_white
         seg_min = 24000
+        iterations_1 = 7
+        iterations_2 = 9
     else:
         if color == "B":
             img_b_or_w = 255 - img_blur
-            ##percentage = 0.235
+            percentage = percentage_black
             seg_min = 31000
+            iterations_1 = 4
+            iterations_2 = 5
         else:
             raise ValueError("Invalid color selection. Valid options are B for Black or W for White")
         
@@ -224,64 +228,42 @@ def seg_orientation_lines(image, color, percentage):
         all_grayscale_values.extend(gray_values)
 
     print(all_grayscale_values)
-    max_gray = max(all_grayscale_values)
-    
-    sorted_values = sorted(all_grayscale_values)  # Sortiere die Grauwerte aufsteigend
-    num_values = len(sorted_values)  # Anzahl der Grauwerte
 
-    # oberen möglichen 13% ab maximum Grauwert
-    #percentage = 0.13
-    thresh_percent = 1-percentage
-    
-    index_1 = int(num_values * thresh_percent)  # Index für den 13% Punkt
+    #threshold 2, which brings better results in most of the time
+    max_gray = max(all_grayscale_values)
     threshold_2 = int(max_gray - (max_gray*percentage))
 
-    #print(index_1)
+    #threshold 1, which is better when threshold 2 comes on his limits
+    sorted_values = sorted(all_grayscale_values)  # Sortiere die Grauwerte aufsteigend
+    num_values = len(sorted_values)  # Anzahl der Grauwerte
+    # oberen möglichen percentage ab maximum Grauwert
+    #thresh_percent = 1-percentage
+    index_1 = int(num_values * (1-percentage))  # Index für augewählter percentage
+    #threshold_2 = int(max_gray - (max_gray*percentage))
     threshold_1 = sorted_values[index_1]
-
 
     print("1:", threshold_1)
     print("2:", threshold_2)
 
-    img_largest = seg_dilate_lagrestcomp(img_b_or_w, thresh = threshold_2)
-
-    # t, seg = cv2.threshold(img_b_or_w,threshold_2,255,cv2.THRESH_BINARY)
-
-
-    # #segmentiert das größe zusammenhängende Objekt
-    # # Erstelle ein Bild, das nur das größte zusammenhängende Element enthält
-    # if color == "W":
-    #     iterations_1 = 7
-    # else:
-    #     if color == "B":
-    #         iterations_1 = 4
-    #     else:
-    #         raise ValueError("Invalid color selection. Valid options are B for Black or W for White")
-
-
-    # img_dilate = cv2.dilate(seg.astype('uint8'), np.ones((3,3)), iterations = iterations_1)
-    # #plt.imshow(seg)
-
-    # img_largest = find_largest_component(img_dilate)
-    # #plt.imshow(img_largest)
+    #fist steps of dilate, find_largest_component, erod, ... 
+    #after it is executed checks if result is sufficient, otherwise same procedure with thresh1
+    img_largest = seg_dilate_lagrestcomp(img_b_or_w, thresh = threshold_2, iterations = iterations_1)
 
     #TODO: Wenn seg Fläche kleiner Grenzwert ( ca. 30.000), dann nochmal mit thresh_1 statt thresh_2
     white_pixels = cv2.countNonZero(img_largest)
     if white_pixels <= seg_min:
-        img_largest_correct = seg_dilate_lagrestcomp(img_b_or_w, thresh=threshold_1)
+        img_largest_correct = seg_dilate_lagrestcomp(img_b_or_w, thresh = threshold_1, iterations = iterations_1)
     else:
         img_largest_correct = img_largest
 
-
     #Um evtl. falsch verbundene Komponenten zu entfernen nocheinmal erode, find_largest_component, dilate
-    #iterations_2 = 9
-    if color == "W":
-        iterations_2 = 9
-    else:
-        if color == "B":
-            iterations_2 = 5
-        else:
-            raise ValueError("Invalid color selection. Valid options are B for Black or W for White")
+    # if color == "W":
+    #     iterations_2 = 9
+    # else:
+    #     if color == "B":
+    #         iterations_2 = 5
+    #     else:
+    #         raise ValueError("Invalid color selection. Valid options are B for Black or W for White")
 
     img_erode = cv2.erode(img_largest_correct.astype('uint8'), np.ones((3,3)), iterations = iterations_2)
     #plt.imshow(img_erode)
@@ -479,5 +461,27 @@ def seg_orientation_lines1(image, color):
     #plt.imshow(img_largest_2)
 
     img_out = cv2.dilate(img_largest_2.astype('uint8'), np.ones((3,3)), iterations = int(iterations_2*1.5))
+
+    return img_out
+
+
+#%%
+def draw_seg_orientationline(original_image, seg_image, color=(255, 255, 0), alpha=0.25):
+    '''
+        Draws the segmented areas into the original picture as a yellow transparent area.
+        Input: original_image, segmented_image, Color (default: yellow), Transparency (default: 0.25)
+        Output: Picture with blue transparent orientation lines
+    '''
+    # Create a copy of the original image
+    overlay = original_image.copy()
+
+    # Convert the segmented image to a 3-channel RGB image
+    segmented_image_rgb = cv2.cvtColor(seg_image, cv2.COLOR_GRAY2RGB)
+
+    # Set the color of the area in the overlay image to the specified color (default: yellow)
+    overlay[np.where(seg_image)] = color
+
+    # Add the overlay image to the original image with transparency
+    img_out = cv2.addWeighted(original_image, 1 - alpha, overlay, alpha, 0)
 
     return img_out
