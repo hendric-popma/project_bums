@@ -56,7 +56,7 @@ def calc_line_koords(x1,y1,x2,y2, limits: list):
 def find_center_plot(img):
     '''
     finds the center of a image with white contour on black 
-    returns the new image and koords (x/y) of the center 
+    returns the new image and koords(x/y) of the center 
     '''
     m = cv2.moments(img)
     try:
@@ -109,6 +109,25 @@ def put_text_image(img, text:str):
     # Get the text size
     (text_width, text_height), _ = cv2.getTextSize(text, font, font_scale, thickness)
     return cv2.putText(img, text, (int(img.shape[1]/2-text_width/2), int(img.shape[0]/2-text_height/2)), font, font_scale, color, thickness)
+
+def draw_seg_orientationline(original_image, seg_image, color=(0, 255, 255), alpha=0.25):
+    '''
+        Draws the segmented areas into the original picture as a yellow transparent area.
+     TODO better description
+        Input: original_image, segmented_image, Color (default: yellow), Transparency (default: 0.25)
+        Output: Picture with blue transparent orientation lines
+    '''
+    # Create a copy of the original image
+    overlay = original_image.copy()
+
+    # Set the color of the area in the overlay image to the specified color (default: yellow)
+    overlay[np.where(seg_image)] = color
+
+    # Add the overlay image to the original image with transparency
+    img_out = cv2.addWeighted(original_image, 1-alpha, overlay, alpha, 0)
+
+    return img_out
+
 
 def seg_orientation_lines(image, color):
     '''

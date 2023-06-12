@@ -169,14 +169,12 @@ while video.isOpened() and c < 300:
 
     c = c+1
     #print(c)
+    frame_test = draw_seg_orientationline(frame_show, img_cont)
     cv2.imshow('Modified Frame', frame_show)
 
     # Check for key press to exit
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
-
 # Release the video objects and close the windows
 video.release()
 cv2.destroyAllWindows()
-
-print(output)
