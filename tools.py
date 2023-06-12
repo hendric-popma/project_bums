@@ -56,7 +56,7 @@ def calc_line_koords(x1,y1,x2,y2, limits: list):
 def find_center_plot(img):
     '''
     finds the center of a image with white contour on black 
-    returns the new image and koords of the center 
+    returns the new image and koords (x/y) of the center 
     '''
     m = cv2.moments(img)
     try:
@@ -94,6 +94,21 @@ def thresh_gauss(img):
     gauss = cv2.GaussianBlur(img, None, 10)
     t, seg = cv2.threshold(gauss,200,1,cv2.THRESH_BINARY+cv2.THRESH_OTSU) #streifen = 200
     return seg
+
+def put_text_image(img, text:str):
+    """
+    puts the text in the middel of an image
+    returns the new image 
+    """
+    # Define the text and its properties
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 3.0
+    thickness = 10
+    color = (255, 0, 255)  # Green color in BGR format
+
+    # Get the text size
+    (text_width, text_height), _ = cv2.getTextSize(text, font, font_scale, thickness)
+    return cv2.putText(img, text, (int(img.shape[1]/2-text_width/2), int(img.shape[0]/2-text_height/2)), font, font_scale, color, thickness)
 
 def seg_orientation_lines(image, color):
     '''
