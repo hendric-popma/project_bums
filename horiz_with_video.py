@@ -2,27 +2,52 @@ import cv2
 import numpy as np 
 import matplotlib.pyplot as plt 
 from tools import *
+import sys
+import pyttsx3 
 plt.gray()
 
 # Open the video file
-video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/kempten1.MOV")
+while True:
+    try:
+        path = input("please enter the path to the video, exit with q: ")
+        if path == "q":
+            break
+        video = cv2.VideoCapture(path)
+        if not video.isOpened():
+            print("wrong path please try again")
+        else:
+            print("")
+            break
+    except:
+        print("")
+if path == "q":
+    sys.exit()
+
+while True:
+    line_color = input("Please enter the color of the line. Choose between black(b) or white(w): ").upper()
+    
+    if line_color == "W" or line_color == "B":
+        print("You did a great Job!")
+        break  # Exit the loop if the input is correct
+    else:
+        print("Are you serious?")
+
+
+
 #video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/muenchen2.mp4")
-
-# Check if the video file was successfully opened
-if not video.isOpened():
-    print("Error opening video file.")
-
+#video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/kempten1.MOV")
 
 # declare some list and start values which are needed
-c = 0 #TODO not used delete at end
+counter = 0 
 save_cnts = 0
 wait = 0
 output = []
-dist = []
+dist = [0]
 koords = []
 only_straight = []
+res_text = "start"
 # Read and process the video frames
-while video.isOpened():# and c < 300:
+while video.isOpened():
     # Read a single frame
     ret, frame = video.read()
     frame_show = frame.copy()
@@ -35,8 +60,8 @@ while video.isOpened():# and c < 300:
     frame_width = frame.shape[1]
 
     # segmentation of the frame, to get black and white picture with the lines
-    img_cont = seg_orientation_lines(frame, "W")
-    
+    img_cont = seg_orientation_lines(frame, str(line_color))
+    # TODO make input for the user
     # cut picture to find two center points to draw the line 
     cut = int(3/5 * frame_height)
     black_up = img_cont[:cut,:]
@@ -58,12 +83,11 @@ while video.isOpened():# and c < 300:
     c_new = np.concatenate((c_black_up, c_black_down))
     # make line through middle 
     koords = calc_line_koords(koords_up[0], koords_up[1], koords_down[0], koords_down[1]+cut, [0,frame_height])
-    img_line = cv2.line(c_new, koords[0], koords[1], [0,0,0], 20) # not used
+    img_line = cv2.line(c_new, koords[0], koords[1], [0,0,0], 20)
     frame_show = cv2.line(frame_show, koords[0], koords[1], [0,0,0], 20)
     canny = cv2.Canny(img_line, 0, 0)
-    
-    img_cut = img_line.copy() #TODO change too frame_show
-    
+    img_cut = img_line.copy() 
+
     # check for zeroes at bottom of frame to find line from canny 
     one = canny[frame_height-10,:] > 0
     #xposition where img is white at bottom
@@ -110,7 +134,7 @@ while video.isOpened():# and c < 300:
     on3 = np.where(one3==True)
     if len(on2[0]) < 2 and len(on3[0] < 2): 
         print("straight not possible")
-        only_straight.append(1)
+        only_straight.append(1)  
     else:
         only_straight.append(0)
 
@@ -137,8 +161,6 @@ while video.isOpened():# and c < 300:
                 frame_show = cv2.drawContours(frame_show, cnts, i, [255,0,0], 2)
                 cnts_idx.append(i)
         
-
-        # TODO hold contours to y value and then search again need pixel change per frame or all 5 frames 
 
         koords_hor = []        
         for i in cnts_idx:
@@ -212,13 +234,13 @@ while video.isOpened():# and c < 300:
             res_text = ubers[output[-1]]
 
     res_text = res_text + str(dist[-1])
-    print(res_text)
 
     frame_show = put_text_image(frame_show, res_text)
 
-    c = c+1
-    #print(c)
+    counter = counter+1
+
     frame_show = draw_seg_orientationline(frame_show, img_cont)
+
     cv2.imshow('Modified Frame', frame_show)
 
     # Check for key press to exit
