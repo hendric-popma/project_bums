@@ -20,6 +20,7 @@ wait = 0
 output = []
 dist = []
 koords = []
+only_straight = []
 # Read and process the video frames
 while video.isOpened():# and c < 300:
     # Read a single frame
@@ -100,13 +101,30 @@ while video.isOpened():# and c < 300:
         wait = wait +1 
     save_cnts = len(cnts) #save for next while step
     
+    # check if you cannot go straight
+    one2 = canny[int(1/3 * frame_height),:] > 0
+    one3 = canny[int(0.5 * frame_height),:] > 0
+
+    #xposition where img is white at bottom
+    on2 = np.where(one2==True)
+    on3 = np.where(one3==True)
+    if len(on2[0]) < 2 and len(on3[0] < 2): 
+        print("straight not possible")
+        only_straight.append(1)
+    else:
+        only_straight.append(0)
+
+
 
     new = cv2.merge((img_line, img_line, img_line)) # TODO not used
     if wait <2:
-
-    #TODO line at top to check if you can go straight
-        res_text = "straight"
-        output.append(0)
+        # check for zeroes at bottom of frame to find line from canny 
+        if only_straight[-1] == 1 and only_straight[-2] == 1 and only_straight[-3] == 1:
+            res_text = "no line"
+            output.append(4)
+        else:
+            output.append(0)
+            res_text = "straight"
         dist.append("")
     if wait > 2:
         
@@ -134,31 +152,53 @@ while video.isOpened():# and c < 300:
             if koords_hor[0][0] < (koords[0][0]+koords[1][0])/2:
                 res_text = "left"
                 #left is one
-                output.append(1)
                 dist.append(frame_height-koords_hor[0][1])
+                if only_straight[-1] == 1 and only_straight[-2] == 1 and only_straight[-3] == 1:
+                    res_text = "only left"
+                    output.append(11)
+                else:
+                    output.append(1)
+                
             if koords_hor[0][0] > (koords[0][0]+koords[1][0])/2:
                 res_text = "right"
                 #rigth is two
-                output.append(2)
                 dist.append(frame_height-koords_hor[0][1])
+                if only_straight[-1] == 1 and only_straight[-2] == 1 and only_straight[-3] == 1:
+                    res_text = "only right"
+                    output.append(22)
+                else:
+                    output.append(2)
         elif len(koords_hor) == 2:
 #TODO check position of the cnts 
             if koords_hor[0][0] < (koords[0][0]+koords[1][0])/2 and koords_hor[1][0] > (koords[0][0]+koords[1][0])/2:
                 res_text = "left and right"
                 #left and right is 3
-                output.append(3)
                 dist.append(frame_height-koords_hor[0][1])
+                if only_straight[-1] == 1 and only_straight[-2] == 1 and only_straight[-3] == 1:
+                    res_text = "only left and right"
+                    output.append(33)
+                else:
+                    output.append(3)
             elif koords_hor[1][0] < (koords[0][0]+koords[1][0])/2 and koords_hor[0][0] > (koords[0][0]+koords[1][0])/2:
                 res_text = "left and right"
                 #left and right is 3
                 output.append(3)
                 dist.append(frame_height-koords_hor[0][1])
+                if only_straight[-1] == 1 and only_straight[-2] == 1 and only_straight[-3] == 1:
+                    res_text = "only left and right"
+                    output.append(33)
+                else:
+                    output.append(3)
     
     ubers = {
         0 : "straight",
         1 : "left", 
         2 : "right",
-        3: "left and right"   
+        3: "left and right",
+        4 : "no orientation line",
+        11 : "only left", 
+        22: "only right", 
+        33 : "only left and right",
     }
 
 
@@ -167,7 +207,7 @@ while video.isOpened():# and c < 300:
         if output[-1] == output[-2]:
             res_text = ubers[output[-1]]
         elif output[-1] != output[-2]: 
-            res_text = ubers[output[-3  ]]
+            res_text = ubers[output[-3]]
         elif output[-1] == output[-3]:
             res_text = ubers[output[-1]]
 
