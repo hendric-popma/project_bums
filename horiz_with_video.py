@@ -13,61 +13,66 @@ if not video.isOpened():
     print("Error opening video file.")
 
 
-# Read and process the video frames
-c = 0
+# declare some list and start values which are needed
+c = 0 #TODO not used delete at end
 save_cnts = 0
 wait = 0
 output = []
 dist = []
 koords = []
-while video.isOpened() and c < 300:
+# Read and process the video frames
+while video.isOpened():# and c < 300:
     # Read a single frame
     ret, frame = video.read()
     frame_show = frame.copy()
     # Check if the frame was successfully read
     if not ret:
         break
-
-    # chaneg to old thresh
-    #img_thresh = thresh_gauss(frame)
-    #img_cont = find_max_contour(img_thresh)
-
+    
+    # get sizes of the frame 
     frame_height = frame.shape[0]
     frame_width = frame.shape[1]
 
+    # segmentation of the frame, to get black and white picture with the lines
     img_cont = seg_orientation_lines(frame, "W")
     
-    
+    # cut picture to find two center points to draw the line 
     cut = int(3/5 * frame_height)
     black_up = img_cont[:cut,:]
     black_down = img_cont[cut:,:]
+
     #find center of both halfs
     c_black_up, koords_up = find_center_plot(black_up)
     c_black_down, koords_down = find_center_plot(black_down)
-    # if koords are center koords take the koords from the "run" bevore
-    if len(koords) > 0: #otherwise error in first run
+    # if koords are center koords take the koords from the "run" before
+    
+    if len(koords) > 0: #TODO check if necessary #otherwise error in first run
         if koords_up == [int(val/2) for val in list(frame.shape[:2])]:
             koords_up = koords[0]
         if koords_down == [int(val/2) for val in list(frame.shape[:2])]:
             koords_down = koords[1]
     
     
-    #concatenate both halfs
+    #concatenate both halfs two full picture again
     c_new = np.concatenate((c_black_up, c_black_down))
     # make line through middle 
     koords = calc_line_koords(koords_up[0], koords_up[1], koords_down[0], koords_down[1]+cut, [0,frame_height])
-    img_line = cv2.line(c_new, koords[0], koords[1], [0,0,0], 20)
+    img_line = cv2.line(c_new, koords[0], koords[1], [0,0,0], 20) # not used
     frame_show = cv2.line(frame_show, koords[0], koords[1], [0,0,0], 20)
     canny = cv2.Canny(img_line, 0, 0)
     
-    img_cut = img_line.copy()
+    img_cut = img_line.copy() #TODO change too frame_show
+    
+    # check for zeroes at bottom of frame to find line from canny 
     one = canny[frame_height-10,:] > 0
-
     #xposition where img is white at bottom
     on = np.where(one==True)
 
-    # TODO make smarter    
+    # TODO make smarter  
+    # make black line over the big white straight line (vertical)
+    # if no line at bottom go up until line was found   
     dist_min = frame_height*0.1
+    # check that are enough space to the edge of frame
     if len(on[0]) >= 2 and on[0][0] > dist_min and on[0][-1] < (frame_height-dist_min):
         #make black in line 
         img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
@@ -82,7 +87,8 @@ while video.isOpened() and c < 300:
             ycheck = ycheck - offset_line_canny  
         img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
 
-
+    # find contours after making the straight line black
+    # with these contours we check where we can go
     cnts,_ = cv2.findContours(img_cut, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     # when cnts come in picture wait bevor findcontours so that contour is in complete picture solved
     img_cnts = cv2.drawContours(img_cut,cnts, -1, [255,0,0], 10)
@@ -94,8 +100,11 @@ while video.isOpened() and c < 300:
         wait = wait +1 
     save_cnts = len(cnts) #save for next while step
     
-    new = cv2.merge((img_line, img_line, img_line))
+
+    new = cv2.merge((img_line, img_line, img_line)) # TODO not used
     if wait <2:
+
+    #TODO line at top to check if you can go straight
         res_text = "straight"
         output.append(0)
         dist.append("")
@@ -169,7 +178,7 @@ while video.isOpened() and c < 300:
 
     c = c+1
     #print(c)
-    frame_test = draw_seg_orientationline(frame_show, img_cont)
+    frame_show = draw_seg_orientationline(frame_show, img_cont)
     cv2.imshow('Modified Frame', frame_show)
 
     # Check for key press to exit
