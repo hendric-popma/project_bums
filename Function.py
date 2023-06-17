@@ -464,3 +464,31 @@ def audio_output(value, standard1_str_= str("Eine Kreuzung wurde dedektiert!"), 
     # Output the new value as audio
     engine.say(value_str)
     engine.runAndWait()
+
+    #%%
+    def nearest_line(koords, image_width):
+        '''
+            Looks for the section in which the koords are located,
+            allowing us to determine if we are already on the orientation line
+            or if the nearest line is to the left or right of us.
+
+            Args: 
+                koords: Koordinates of the segmentated center of the lower section
+                image_width: Width of the original used image or frame
+
+            Output: "On line" , "nearest line is left" or "nearest line is  rigth""first - Kopie.ipynb"
+        '''
+        x_value = koords[0]
+        sections = image_width*(1/8)
+
+        if 2*sections < x_value < 6*sections:
+            location = "on line"
+
+        else:
+            if x_value <= 2*sections:
+                location = "nearset line is left"
+
+            if x_value >= 6*sections:
+                location = "nearest line is right"
+
+        return location
