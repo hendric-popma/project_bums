@@ -3,38 +3,14 @@ import numpy as np
 import matplotlib.pyplot as plt 
 from tools import *
 import sys
-import pyttsx3 
+#import pyttsx3 
 plt.gray()
 
 # Open the video file
-while True:
-    try:
-        path = input("please enter the path to the video, exit with q: ")
-        if path == "q":
-            break
-        video = cv2.VideoCapture(path)
-        if not video.isOpened():
-            print("wrong path please try again")
-        else:
-            print("")
-            break
-    except:
-        print("")
-if path == "q":
-    sys.exit()
 
-while True:
-    line_color = input("Please enter the color of the line. Choose between black(b) or white(w): ").upper()
-    
-    if line_color == "W" or line_color == "B":
-        print("You did a great Job!")
-        break  # Exit the loop if the input is correct
-    else:
-        print("Are you serious?")
+video, line_color, total_frames = user_input()
 
-
-
-#video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/muenchen2.mp4")
+#video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/muenchen7.mp4")
 #video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/kempten1.MOV")
 
 # declare some list and start values which are needed
@@ -53,6 +29,7 @@ while video.isOpened():
     frame_show = frame.copy()
     # Check if the frame was successfully read
     if not ret:
+        print("Error load frame")
         break
     
     # get sizes of the frame 
@@ -61,57 +38,66 @@ while video.isOpened():
 
     # segmentation of the frame, to get black and white picture with the lines
     img_cont = seg_orientation_lines(frame, str(line_color))
-    # TODO make input for the user
-    # cut picture to find two center points to draw the line 
-    cut = int(3/5 * frame_height)
-    black_up = img_cont[:cut,:]
-    black_down = img_cont[cut:,:]
 
-    #find center of both halfs
-    c_black_up, koords_up = find_center_plot(black_up)
-    c_black_down, koords_down = find_center_plot(black_down)
-    # if koords are center koords take the koords from the "run" before
+    # cut picture to find two center points to draw the line
+    def build_center_line(img_cont,frame_show, frame_height):
+        koords = []
+        cut = int(3/5 * frame_height)
+        black_up = img_cont[:cut,:]
+        black_down = img_cont[cut:,:]
+
+        #find center of both halfs
+        c_black_up, koords_up = find_center_plot(black_up)
+        c_black_down, koords_down = find_center_plot(black_down)
+        # if koords are center koords take the koords from the "run" before
+        
+        if len(koords) > 0: #TODO check if necessary #otherwise error in first run
+            if koords_up == [int(val/2) for val in list(img_cont.shape[:2])]: #frame 
+                koords_up = koords[0]
+            if koords_down == [int(val/2) for val in list(img_cont.shape[:2])]:
+                koords_down = koords[1]
+        
+        
+        #concatenate both halfs two full picture again
+        c_new = np.concatenate((c_black_up, c_black_down))
+        # make line through middle 
+        koords = calc_line_koords(koords_up[0], koords_up[1], koords_down[0], koords_down[1]+cut, [0,frame_height])
+        img_line = cv2.line(c_new, koords[0], koords[1], [0,0,0], 7)
+        frame_show = cv2.line(frame_show, koords[0], koords[1], [0,0,0], 7)
+        return img_line, frame_show, koords
     
-    if len(koords) > 0: #TODO check if necessary #otherwise error in first run
-        if koords_up == [int(val/2) for val in list(frame.shape[:2])]:
-            koords_up = koords[0]
-        if koords_down == [int(val/2) for val in list(frame.shape[:2])]:
-            koords_down = koords[1]
+    img_line, frame_show, koords = build_center_line(img_cont,frame_show, frame_height)
     
     
-    #concatenate both halfs two full picture again
-    c_new = np.concatenate((c_black_up, c_black_down))
-    # make line through middle 
-    koords = calc_line_koords(koords_up[0], koords_up[1], koords_down[0], koords_down[1]+cut, [0,frame_height])
-    img_line = cv2.line(c_new, koords[0], koords[1], [0,0,0], 20)
-    frame_show = cv2.line(frame_show, koords[0], koords[1], [0,0,0], 20)
     canny = cv2.Canny(img_line, 0, 0)
     img_cut = img_line.copy() 
 
     # check for zeroes at bottom of frame to find line from canny 
-    one = canny[frame_height-10,:] > 0
-    #xposition where img is white at bottom
-    on = np.where(one==True)
+    def make_block_over_center_line(canny,img_cut, frame_height):
+        one = canny[frame_height-10,:] > 0
+        #xposition where img is white at bottom
+        on = np.where(one==True)
 
-    # TODO make smarter  
-    # make black line over the big white straight line (vertical)
-    # if no line at bottom go up until line was found   
-    dist_min = frame_height*0.1
-    # check that are enough space to the edge of frame
-    if len(on[0]) >= 2 and on[0][0] > dist_min and on[0][-1] < (frame_height-dist_min):
-        #make black in line 
-        img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
+        # TODO make smarter  
+        # make black line over the big white straight line (vertical)
+        # if no line at bottom go up until line was found   
+        dist_min = frame_height*0.1
+        # check that are enough space to the edge of frame
+        if len(on[0]) >= 2 and on[0][0] > dist_min and on[0][-1] < (frame_height-dist_min):
+            #make black in line 
+            img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
 
-    else: 
-        offset_line_canny = int(frame_height * 0.2) #for horizontal video offset 0.8
-        ycheck = frame_height-offset_line_canny
-        # put y position up as long there is no white space found
-        while len(on[0]) == 0:
-            one = canny[ycheck,:] > 0
-            on = np.where(one==True)
-            ycheck = ycheck - offset_line_canny  
-        img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
-
+        else: 
+            offset_line_canny = int(frame_height * 0.2) #for horizontal video offset 0.8
+            ycheck = frame_height-offset_line_canny
+            # put y position up as long there is no white space found
+            while len(on[0]) == 0:
+                one = canny[ycheck,:] > 0
+                on = np.where(one==True)
+                ycheck = ycheck - offset_line_canny  
+            img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
+        return img_cut
+    img_cut = make_block_over_center_line(canny, img_cut, frame_height)
     # find contours after making the straight line black
     # with these contours we check where we can go
     cnts,_ = cv2.findContours(img_cut, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -129,11 +115,10 @@ while video.isOpened():
     one2 = canny[int(1/3 * frame_height),:] > 0
     one3 = canny[int(0.5 * frame_height),:] > 0
 
-    #xposition where img is white at bottom
+    #xposition where img is white/black at top
     on2 = np.where(one2==True)
     on3 = np.where(one3==True)
     if len(on2[0]) < 2 and len(on3[0] < 2): 
-        print("straight not possible")
         only_straight.append(1)  
     else:
         only_straight.append(0)
@@ -240,11 +225,13 @@ while video.isOpened():
     counter = counter+1
 
     frame_show = draw_seg_orientationline(frame_show, img_cont)
-
+    
     cv2.imshow('Modified Frame', frame_show)
 
     # Check for key press to exit
     if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+    if video.get(cv2.CAP_PROP_POS_FRAMES) == total_frames:
         break
 # Release the video objects and close the windows
 video.release()
