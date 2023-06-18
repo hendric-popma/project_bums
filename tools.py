@@ -4,6 +4,7 @@ import cv2
 import numpy as np 
 import matplotlib.pyplot as plt
 import pyttsx3
+import sys
 
 def read_video_frames(video_path):
     """function to read in video frame by frame and save it in a list with an index"""
@@ -34,6 +35,48 @@ def read_video_frames(video_path):
 
     return frame_list
 
+def user_input():
+    """
+    reads in the video file
+    user gives video file over path and decide if the line is black or white
+
+    return:
+        video   cv2.VideoCapture Object
+        line_color  string W or B 
+    """
+    while True:
+        try:
+            path = input("please enter the path to the video, exit with q: ")
+            if path == "q":
+                break
+            video = cv2.VideoCapture(path)
+            total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT)) # for automatic sopping
+            if not video.isOpened():
+                print("wrong path please try again")
+            else:
+                print("")
+                break
+        except:
+            print("")
+    if path == "q":
+        sys.exit()
+
+    while True:
+        line_color = input("Please enter the color of the line. Choose between black(b) or white(w): ").upper()
+        
+        if line_color == "W" or line_color == "B":
+            print("You did a great Job!")
+            break  # Exit the loop if the input is correct
+        else:
+            print("Are you serious?")
+    return video, line_color, total_frames
+
+class Frame:
+    def __init__(self, frame):
+        self.height = frame.shape[0]
+        self.width = frame.shape[1]
+        self.show = frame.copy()
+        
 
 #TODO CONVERT FRAMES TO GRAYSCALE 
 
@@ -103,8 +146,8 @@ def put_text_image(img, text:str):
     """
     # Define the text and its properties
     font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 3.0
-    thickness = 10
+    font_scale = 1.5
+    thickness = 4
     color = (255, 0, 255)  # Green color in BGR format
 
     # Get the text size
