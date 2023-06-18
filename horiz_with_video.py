@@ -39,7 +39,7 @@ while video.isOpened():
     # segmentation of the frame, to get black and white picture with the lines
     img_cont = seg_orientation_lines(frame, str(line_color))
 
-    # cut picture to find two center points to draw the line
+    #cut picture to find two center points to draw the line
     def build_center_line(img_cont,frame_show, frame_height):
         koords = []
         cut = int(3/5 * frame_height)
@@ -66,7 +66,7 @@ while video.isOpened():
         frame_show = cv2.line(frame_show, koords[0], koords[1], [0,0,0], 7)
         return img_line, frame_show, koords
     
-    img_line, frame_show, koords = build_center_line(img_cont,frame_show, frame_height)
+    img_line, frame_show, koords = build_center_line(img_cont, frame_show, frame_height)
     
     
     canny = cv2.Canny(img_line, 0, 0)
@@ -92,12 +92,16 @@ while video.isOpened():
             ycheck = frame_height-offset_line_canny
             # put y position up as long there is no white space found
             while len(on[0]) == 0:
+                #ycheck cannot be smaller than = otherwise it isnt in the picture range of y-axis
+                if ycheck <=0:
+                    return
                 one = canny[ycheck,:] > 0
                 on = np.where(one==True)
                 ycheck = ycheck - offset_line_canny  
             img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
         return img_cut
     img_cut = make_block_over_center_line(canny, img_cut, frame_height)
+    
     # find contours after making the straight line black
     # with these contours we check where we can go
     cnts,_ = cv2.findContours(img_cut, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -110,93 +114,98 @@ while video.isOpened():
     if wait >= 1: # count up if bigger then one
         wait = wait +1 
     save_cnts = len(cnts) #save for next while step
-    
-    # check if you cannot go straight
-    one2 = canny[int(1/3 * frame_height),:] > 0
-    one3 = canny[int(0.5 * frame_height),:] > 0
+    def where_to(img_line,wait,cnts,frame_show, frame_height):
+        # check if you cannot go straight
+        one2 = canny[int(1/3 * frame_height),:] > 0
+        one3 = canny[int(0.5 * frame_height),:] > 0
 
-    #xposition where img is white/black at top
-    on2 = np.where(one2==True)
-    on3 = np.where(one3==True)
-    if len(on2[0]) < 2 and len(on3[0] < 2): 
-        only_straight.append(1)  
-    else:
-        only_straight.append(0)
-
-
-
-    new = cv2.merge((img_line, img_line, img_line)) # TODO not used
-    if wait <2:
-        # check for zeroes at bottom of frame to find line from canny 
-        if only_straight[-1] == 1 and only_straight[-2] == 1 and only_straight[-3] == 1:
-            res_text = "no line"
-            output.append(4)
+        #xposition where img is white/black at top
+        on2 = np.where(one2==True)
+        on3 = np.where(one3==True)
+        
+        if len(on2[0]) <= 2 and len(on3[0] <= 2): 
+            only_straight.append(1) 
+            print(on2, on3, wait, only_straight[-1]) 
         else:
-            output.append(0)
-            res_text = "straight"
-        dist.append("")
-    if wait > 2:
-        
-        cnts_idx = []
-        for i in range(0,len(cnts)):
-            # Calculate the bounding rectangle of the contour
-            x, y, w, h = cv2.boundingRect(cnts[i])
-            if w/h > 1:
-                new = cv2.drawContours(new, cnts, i, [255,0,0], 2)
-                frame_show = cv2.drawContours(frame_show, cnts, i, [255,0,0], 2)
-                cnts_idx.append(i)
-        
+            only_straight.append(0)
 
-        koords_hor = []        
-        for i in cnts_idx:
-            _,cent = find_center_plot(cnts[i])
-            new = cv2.circle(new,cent,10, [255,0,0], cv2.FILLED)
-            frame_show = cv2.circle(frame_show,cent,10, [255,0,0], cv2.FILLED)
-            koords_hor.append(cent)
-        
-        #check if koords_hor ist left or right from the middle or both 
-        if len(koords_hor) == 1:
-            if koords_hor[0][0] < (koords[0][0]+koords[1][0])/2:
-                res_text = "left"
-                #left is one
-                dist.append(frame_height-koords_hor[0][1])
-                if only_straight[-1] == 1 and only_straight[-2] == 1 and only_straight[-3] == 1:
-                    res_text = "only left"
-                    output.append(11)
-                else:
-                    output.append(1)
-                
-            if koords_hor[0][0] > (koords[0][0]+koords[1][0])/2:
-                res_text = "right"
-                #rigth is two
-                dist.append(frame_height-koords_hor[0][1])
-                if only_straight[-1] == 1 and only_straight[-2] == 1 and only_straight[-3] == 1:
-                    res_text = "only right"
-                    output.append(22)
-                else:
-                    output.append(2)
-        elif len(koords_hor) == 2:
-#TODO check position of the cnts 
-            if koords_hor[0][0] < (koords[0][0]+koords[1][0])/2 and koords_hor[1][0] > (koords[0][0]+koords[1][0])/2:
-                res_text = "left and right"
-                #left and right is 3
-                dist.append(frame_height-koords_hor[0][1])
-                if only_straight[-1] == 1 and only_straight[-2] == 1 and only_straight[-3] == 1:
-                    res_text = "only left and right"
-                    output.append(33)
-                else:
+
+
+        new = cv2.merge((img_line, img_line, img_line)) # TODO not used
+        if wait <2:
+            # check for zeroes at bottom of frame to find line from canny 
+            if only_straight[-1] == 1 and only_straight[-2] == 1:# and only_straight[-3] == 1:
+                res_text = "no line"
+                output.append(4)
+            else:
+                output.append(0)
+                res_text = "straight"
+            dist.append("")
+        if wait > 2:
+            
+            cnts_idx = []
+            for i in range(0,len(cnts)):
+                # Calculate the bounding rectangle of the contour
+                x, y, w, h = cv2.boundingRect(cnts[i])
+                if w/h > 1:
+                    new = cv2.drawContours(new, cnts, i, [255,0,0], 2)
+                    frame_show = cv2.drawContours(frame_show, cnts, i, [255,0,0], 2)
+                    cnts_idx.append(i)
+            
+
+            koords_hor = []        
+            for i in cnts_idx:
+                _,cent = find_center_plot(cnts[i])
+                new = cv2.circle(new,cent,10, [255,0,0], cv2.FILLED)
+                frame_show = cv2.circle(frame_show,cent,10, [255,0,0], cv2.FILLED)
+                koords_hor.append(cent)
+            
+            #check if koords_hor ist left or right from the middle or both 
+            if len(koords_hor) == 1:
+                if koords_hor[0][0] < (koords[0][0]+koords[1][0])/2:
+                    res_text = "left"
+                    #left is one
+                    dist.append(frame_height-koords_hor[0][1])
+                    if only_straight[-1] == 1 and only_straight[-2] == 1 and only_straight[-3] == 1:
+                        res_text = "only left"
+                        output.append(11)
+                    else:
+                        output.append(1)
+                    
+                if koords_hor[0][0] > (koords[0][0]+koords[1][0])/2:
+                    res_text = "right"
+                    #rigth is two
+                    dist.append(frame_height-koords_hor[0][1])
+                    if only_straight[-1] == 1 and only_straight[-2] == 1 and only_straight[-3] == 1:
+                        res_text = "only right"
+                        output.append(22)
+                    else:
+                        output.append(2)
+            elif len(koords_hor) == 2:
+    #TODO check position of the cnts 
+                if koords_hor[0][0] < (koords[0][0]+koords[1][0])/2 and koords_hor[1][0] > (koords[0][0]+koords[1][0])/2:
+                    res_text = "left and right"
+                    #left and right is 3
+                    dist.append(frame_height-koords_hor[0][1])
+                    if only_straight[-1] == 1 and only_straight[-2] == 1 and only_straight[-3] == 1:
+                        res_text = "only left and right"
+                        output.append(33)
+                    else:
+                        output.append(3)
+                elif koords_hor[1][0] < (koords[0][0]+koords[1][0])/2 and koords_hor[0][0] > (koords[0][0]+koords[1][0])/2:
+                    res_text = "left and right"
+                    #left and right is 3
                     output.append(3)
-            elif koords_hor[1][0] < (koords[0][0]+koords[1][0])/2 and koords_hor[0][0] > (koords[0][0]+koords[1][0])/2:
-                res_text = "left and right"
-                #left and right is 3
-                output.append(3)
-                dist.append(frame_height-koords_hor[0][1])
-                if only_straight[-1] == 1 and only_straight[-2] == 1 and only_straight[-3] == 1:
-                    res_text = "only left and right"
-                    output.append(33)
-                else:
-                    output.append(3)
+                    dist.append(frame_height-koords_hor[0][1])
+                    if only_straight[-1] == 1 and only_straight[-2] == 1 and only_straight[-3] == 1:
+                        res_text = "only left and right"
+                        output.append(33)
+                    else:
+                        output.append(3)
+        return output
     
+    output = where_to(img_line,wait,cnts,frame_show, frame_height)
+
     ubers = {
         0 : "straight",
         1 : "left", 

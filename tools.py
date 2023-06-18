@@ -71,6 +71,12 @@ def user_input():
             print("Are you serious?")
     return video, line_color, total_frames
 
+class Frame:
+    def __init__(self, frame):
+        self.height = frame.shape[0]
+        self.width = frame.shape[1]
+        self.show = frame.copy()
+        
 
 #TODO CONVERT FRAMES TO GRAYSCALE 
 
