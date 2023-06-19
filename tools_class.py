@@ -49,7 +49,7 @@ def user_input():
             if path == "q":
                 break
             video = cv2.VideoCapture(path)
-            total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT)) # for automatic sopping
+            total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT)) # for automatic stopping
             if not video.isOpened():
                 print("wrong path please try again")
             else:
@@ -146,7 +146,7 @@ class FrameObject:
         t, seg = cv2.threshold(gauss,200,1,cv2.THRESH_BINARY+cv2.THRESH_OTSU) #streifen = 200
         return seg
 
-    def put_text_frame(self, text:str):
+    def text_in_frame(self, text:str):
         """
         puts the text in the middel of an image
         returns the new image 
@@ -162,7 +162,7 @@ class FrameObject:
         self.show = cv2.putText(self.show, text, (int(self.width/2-text_width/2), int(self.height/2-text_height/2)), font, font_scale, color, thickness)
         return self.show
     
-    def draw_seg_orientationline(self, seg_image, color=(0, 255, 255), alpha=0.25):
+    def overlay_segmentation(self, seg_image, color=(0, 255, 255), alpha=0.25):
         '''
             Draws the segmented areas into the original picture as a yellow transparent area.
         TODO better description
@@ -249,7 +249,7 @@ class FrameObject:
 
 class FindDirection(FrameObject):
     def __init__(self):
-        self.output = []
+        self.output = [0]
         self.dist = [0]
         self.only_straight = []
         self.koords_hor = []
@@ -277,39 +277,46 @@ class FindDirection(FrameObject):
 
     def add_one_counter(self):
         self.counter = self.counter+1
-
-    def find_nearest_line(self):
-        '''
-            Looks for the section in which the koords are located,
-            allowing us to determine if we are already on the orientation line
-            or if the nearest line is to the left or right of us.
-
-            Args: 
-                koords: Koordinates of the segmentated center of the lower section
-                image_width: Width of the original used image or frame
-
-            Output: "On line" , "nearest line is left" or "nearest line is  rigth""first - Kopie.ipynb"
-        '''        
-        x_value = self.koords[1][0]
-        sections = self.frame.width*(1/8)
     
-        if 2*sections < x_value < 6*sections:
-            # we are on the line
-            self.output.append(0)
-            return
-        else:
-            if x_value <= 2*sections:
+    def find_nearest_line(self, img_cont):
+        '''
+        Looks for the section in which the koords are located,
+        allowing us to determine if we are already on the orientation line
+        or if the nearest line is to the left or right of us.
+
+        Args: 
+            koords: Koordinates of the segmentated center of the lower section
+            seg_image: The segmented image of the orientation line.
+
+        Output: None for "On line" , 111 for "nearest line is left" or 222 for "nearest line is rigth"
+        '''
+        w = self.frame.width
+        h = self.frame.height
+        white_pixels = 0
+        for y in range(h-10,h):
+            white_line = np.count_nonzero(img_cont[y] == 255)
+            white_pixels = white_pixels + white_line
+
+        if white_pixels <= 210:   # when True possibility is heigh, that the line comes from on sid into the picture
+            x_value = self.koords[1][0]
+            sections = w*(1/7)
+
+            if 2*sections < x_value < 5*sections:
+                # we are on the line
+                self.output.append(0)
+            elif x_value <= 2*sections:
                 #nearset line is left
                 self.output.append(111)
-
-            if x_value >= 6*sections:
+            elif x_value >= 5*sections:
                 #nearest line is right
                 self.output.append(222)
-        
-        return self.output
+        return
     
 
-    def waiting(self, img):
+    def wait_for_complete_contour(self, img):
+        """
+        delay the direction-decision until contours are complete in image
+        """
         if self.wait is None: 
             self.wait = 0
         if self.save_cnts is None:
@@ -328,15 +335,14 @@ class FindDirection(FrameObject):
 
     def check_where_to_go(self):
 
-            if self.wait is None:
-                print("use fkt waiting before")
-                return
+        if self.wait is None:
+            print("use fkt waiting before")
+            return
 
-        # self.find_nearest_line()
-        # # check if we are on the line or not
-        # if self.output[-1] == 111 or self.output[-1] == 222:
-        #     return
-        # else:
+        # check if we are on the line or not
+        if self.output[-1] == 111 or self.output[-1] == 222:
+            return
+        else:
             # check if you cannot go straight
             one2 = self.frame.canny[int(1/3 * self.frame.height),:] > 0
             one3 = self.frame.canny[int(0.5 * self.frame.height),:] > 0
@@ -415,7 +421,7 @@ class FindDirection(FrameObject):
             self.res_text = ""
 
         if self.counter%5 == 0:
-            print(f"modulo {self.counter}")
+            #print(f"modulo {self.counter}")
 
             if len(self.output) > 3:
                 if self.output[-1] == self.output[-2]:
@@ -523,7 +529,7 @@ class Segmentation:
 
         return img_largest
 
-    def seg_orientation_lines(self, percentage_white=0.2, percentage_black=0.235, region=1/5):
+    def get_orientation_lines(self, percentage_white=0.2, percentage_black=0.235, region=1/5):
         '''
         Segments orientation lines from an input image.
         Output: bw_image with contours of orientation lines

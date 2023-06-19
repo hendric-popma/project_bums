@@ -1,26 +1,14 @@
 import cv2
-import numpy as np 
-import matplotlib.pyplot as plt 
-from tools_class import *
-import sys
-#import pyttsx3 
-plt.gray()
+from tools_class import user_input, FrameObject, FindDirection, Segmentation
 
 # Open the video file
-
 video, line_color, total_frames = user_input()
-print(total_frames)
-#video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/muenchen4.mp4")
-
-# declare some list and start values which are needed
-save_cnts = 0
-wait = 0
-
 # init class/values for while loop
 direct = FindDirection()
 
+#loop through all frames of video
 while video.isOpened():
-    # Read a single frame
+    #Read a single frame
     ret, frame = video.read()
     if not ret:
         print("Error load frame")
@@ -28,25 +16,29 @@ while video.isOpened():
     
     #Create a Frame Object
     frame = FrameObject(frame)
+    #get image from FrameObject
     img = frame.img
 
-    # Create Segmemtation Object  
+    #Create Segmemtation Object  
     seg = Segmentation(frame, line_color)
-    img_cont = seg.seg_orientation_lines()
+    #get the orientation line
+    img_seg = seg.get_orientation_lines()
 
-    frame.build_center_line(img_cont)
+    frame.build_center_line(img_seg)
+    #used later to find the directions
     img = frame.make_block_over_center_line()
     
     # Get Values from FrameObject to Direction Object
-    direct.waiting(img)
     direct.get_values_from_frame_object(frame)
+    direct.wait_for_complete_contour(img)
+    direct.find_nearest_line(img_seg)
     direct.check_where_to_go()
     res_text = direct.smooth_output()
-    frame.put_text_frame(res_text)
-    frame_show = frame.draw_seg_orientationline(img_cont)
+    frame.text_in_frame(res_text)
+    frame_show = frame.overlay_segmentation(img_seg)
     
-    #direct.add_one_counter()
-    cv2.imshow('Modified Frame',frame_show)
+
+    cv2.imshow('Processed Frame',frame_show)
 
     # Check for key press to exit
     if cv2.waitKey(1) & 0xFF == ord('q'):
