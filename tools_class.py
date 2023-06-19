@@ -254,7 +254,9 @@ class FindDirection(FrameObject):
         self.dist = [0]
         self.only_straight = []
         self.koords_hor = []
-        self.res_text = ""
+        self.res_text = None
+        self.wait = None
+        self.save_cnts = None
         self.counter = 0
         self.ubers =    {
             0 : "straight",
@@ -306,8 +308,30 @@ class FindDirection(FrameObject):
                 self.output.append(222)
         
         return self.output
+    
 
-    def check_where_to_go(self,wait,cnts):
+    def waiting(self, img):
+        if self.wait is None: 
+            self.wait = 0
+        if self.save_cnts is None:
+            self.save_cnts
+
+        self.cnts,_ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # when cnts come in picture wait bevor findcontours so that contour is in complete picture solved
+        if len(self.cnts) == 0 and self.save_cnts == 0: 
+            self.wait = 0
+        if len(self.cnts) > 0 and self.save_cnts == 0: 
+            self.wait = self.wait + 1
+        if self.wait >= 1: # count up if bigger then one
+            self.wait = self.wait +1
+        self.save_cnts = len(self.cnts) #save for next while step
+        return self.cnts, self.wait 
+
+    def check_where_to_go(self):
+
+            if self.wait is None:
+                print("use fkt waiting before")
+                return
 
         # self.find_nearest_line()
         # # check if we are on the line or not
@@ -326,27 +350,27 @@ class FindDirection(FrameObject):
             else:
                 self.only_straight.append(0)
 
-            if wait <2:
+            if self.wait <2:
                 # check for zeroes at bottom of frame to find line from canny 
                 if self.only_straight[-1] == 1 and self.only_straight[-2] == 1:# and self.only_straight[-3] == 1:
                     self.output.append(4)
                 else:
                     self.output.append(0)
                 self.dist.append("")
-            if wait > 2:
+            if self.wait > 2:
                 
                 cnts_idx = []
-                for i in range(0,len(cnts)):
+                for i in range(0,len(self.cnts)):
                     # Calculate the bounding rectangle of the contour
-                    x, y, w, h = cv2.boundingRect(cnts[i])
+                    x, y, w, h = cv2.boundingRect(self.cnts[i])
                     if w/h > 0.85: # bevor it was 1
-                        self.frame.show = cv2.drawContours(self.frame.show, cnts, i, [255,0,0], 2)
+                        self.frame.show = cv2.drawContours(self.frame.show, self.cnts, i, [255,0,0], 2)
                         cnts_idx.append(i)
                 
 
                 self.koords_hor = []      
                 for i in cnts_idx:
-                    _,cent = self.find_center_plot(cnts[i])
+                    _,cent = self.find_center_plot(self.cnts[i])
                     self.frame.show = cv2.circle(self.frame.show,cent,10, [255,0,0], cv2.FILLED)
                     self.koords_hor.append(cent)
                 #check if koords_hor ist left or right from the middle or both 
@@ -387,6 +411,10 @@ class FindDirection(FrameObject):
     
     
     def smooth_output(self):
+
+        if self.res_text is None:
+            self.res_text = ""
+
         if self.counter%5 == 0:
             print(f"modulo {self.counter}")
 
@@ -399,11 +427,12 @@ class FindDirection(FrameObject):
                     self.res_text = self.ubers[self.output[-1]]
         #when straight then no distance output
         #self.res_text = self.ubers[self.output[-1]]
+        self.add_one_counter() 
         if self.res_text == "straight" or self.res_text == "no orientation line":
             return self.res_text
         else:
             return self.res_text+ str(self.dist[-1])
-            
+                   
 
     
     def get_ubers(self):

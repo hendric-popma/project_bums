@@ -34,30 +34,18 @@ while video.isOpened():
     seg = Segmentation(frame, line_color)
     img_cont = seg.seg_orientation_lines()
 
-
     frame.build_center_line(img_cont)
-    img_cut = frame.make_block_over_center_line()
-    
-    #def waiting():
-    cnts,_ = cv2.findContours(img_cut, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    # when cnts come in picture wait bevor findcontours so that contour is in complete picture solved
-    img_cnts = cv2.drawContours(img_cut,cnts, -1, [255,0,0], 10)
-    if len(cnts) == 0 and save_cnts == 0: 
-        wait = 0
-    if len(cnts) > 0 and save_cnts == 0: 
-        wait = wait + 1
-    if wait >= 1: # count up if bigger then one
-        wait = wait +1 
-    save_cnts = len(cnts) #save for next while step
+    img = frame.make_block_over_center_line()
     
     # Get Values from FrameObject to Direction Object
+    direct.waiting(img)
     direct.get_values_from_frame_object(frame)
-    direct.check_where_to_go(wait,cnts)
+    direct.check_where_to_go()
     res_text = direct.smooth_output()
     frame.put_text_frame(res_text)
     frame_show = frame.draw_seg_orientationline(img_cont)
     
-    direct.add_one_counter()
+    #direct.add_one_counter()
     cv2.imshow('Modified Frame',frame_show)
 
     # Check for key press to exit
