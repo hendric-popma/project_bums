@@ -279,7 +279,37 @@ class FindDirection(FrameObject):
     def add_one_counter(self):
         self.counter = self.counter+1
 
-    def find_nearest_line(self):
+    # def find_nearest_line(self):
+    #     '''
+    #         Looks for the section in which the koords are located,
+    #         allowing us to determine if we are already on the orientation line
+    #         or if the nearest line is to the left or right of us.
+
+    #         Args: 
+    #             koords: Koordinates of the segmentated center of the lower section
+    #             image_width: Width of the original used image or frame
+
+    #         Output: "On line" , "nearest line is left" or "nearest line is  rigth""first - Kopie.ipynb"
+    #     '''        
+    #     x_value = self.koords[1][0]
+    #     sections = self.frame.width*(1/8)
+    
+    #     if 2*sections < x_value < 6*sections:
+    #         # we are on the line
+    #         self.output.append(0)
+    #         return
+    #     else:
+    #         if x_value <= 2*sections:
+    #             #nearset line is left
+    #             self.output.append(111)
+
+    #         if x_value >= 6*sections:
+    #             #nearest line is right
+    #             self.output.append(222)
+        
+    #     return self.output
+    
+    def find_nearest_line(self, img_cont):
         '''
             Looks for the section in which the koords are located,
             allowing us to determine if we are already on the orientation line
@@ -287,27 +317,38 @@ class FindDirection(FrameObject):
 
             Args: 
                 koords: Koordinates of the segmentated center of the lower section
-                image_width: Width of the original used image or frame
+                seg_image: The segmented image of the orientation line.
 
-            Output: "On line" , "nearest line is left" or "nearest line is  rigth""first - Kopie.ipynb"
-        '''        
-        x_value = self.koords[1][0]
-        sections = self.frame.width*(1/8)
-    
-        if 2*sections < x_value < 6*sections:
-            # we are on the line
-            self.output.append(0)
-            return
-        else:
-            if x_value <= 2*sections:
-                #nearset line is left
-                self.output.append(111)
+            Output: None for "On line" , 111 for "nearest line is left" or 222 for "nearest line is rigth"
+        '''
+        white_pixels = []
+        w = self.frame.width
+        h = self.frame.height
 
-            if x_value >= 6*sections:
-                #nearest line is right
-                self.output.append(222)
+        for y in range(h-10,h,1):
+            for x in range(w):
+                if img_cont[y][x] == 255:  # 255 represents white pixels, 0 represents black pixels
+                    white_pixels.append(1)
+
+        if len(white_pixels) <= 210:   # when True possibility is heigh, that the line comes from on sid into the picture
+            x_value = self.koords[1][0]
+            sections = w*(1/7)
+
+            if 2*sections < x_value < 5*sections:
+                return
+            else:
+                if x_value <= 2*sections:
+                    #nearset line is left
+                    self.output.append(111)
+
+                if x_value >= 5*sections:
+                    #nearest line is right
+                    self.output.append(222)
+
+            return self.output
         
-        return self.output
+        else:
+            return 
     
 
     def waiting(self, img):
@@ -327,13 +368,13 @@ class FindDirection(FrameObject):
         self.save_cnts = len(self.cnts) #save for next while step
         return self.cnts, self.wait 
 
-    def check_where_to_go(self):
+    def check_where_to_go(self, img_cont):
 
             if self.wait is None:
                 print("use fkt waiting before")
                 return
 
-        # self.find_nearest_line()
+        # self.find_nearest_line(img_cont)
         # # check if we are on the line or not
         # if self.output[-1] == 111 or self.output[-1] == 222:
         #     return
@@ -601,4 +642,4 @@ class Segmentation:
 
 
         return img_out
-        
+    
