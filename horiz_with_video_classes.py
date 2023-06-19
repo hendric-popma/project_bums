@@ -9,7 +9,7 @@ plt.gray()
 # Open the video file
 
 video, line_color, total_frames = user_input()
-
+print(total_frames)
 #video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/muenchen4.mp4")
 
 # declare some list and start values which are needed
@@ -57,6 +57,7 @@ while video.isOpened():
     frame.put_text_frame(res_text)
     frame_show = frame.draw_seg_orientationline(img_cont)
     
+    direct.add_one_counter()
     cv2.imshow('Modified Frame',frame_show)
 
     # Check for key press to exit

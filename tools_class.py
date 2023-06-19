@@ -184,7 +184,7 @@ class FrameObject:
 
     def build_center_line(self,img_cont):
         self.koords = []
-        cut = int(3/5 * self.height)
+        cut = int(6/9 * self.height) # bevor 3/5
         black_up = img_cont[:cut,:]
         black_down = img_cont[cut:,:]
 
@@ -226,6 +226,8 @@ class FrameObject:
         # check that are enough space to the edge of frame
         if len(on[0]) >= 2 and on[0][0] > dist_min and on[0][-1] < (self.height-dist_min):
             #make black in line 
+            #dist = (on[0][0]-10)-(on[0][-1]+10)
+            #img_cut = cv2.line(self.line, self.koords[0], self.koords[1], [0,0,0], abs(dist))
             img_cut[:,on[0][0]-10:on[0][-1]+10] = 0 #bevor 5 ->10
 
         else: 
@@ -240,7 +242,10 @@ class FrameObject:
                 on = np.where(one==True)
                 ycheck = ycheck - offset_line_canny  
             img_cut[:,on[0][0]-10:on[0][-1]+10] = 0 # bevor 5 -> 10
-        return img_cut
+            #dist = (on[0][0]-10)-(on[0][-1]+10)
+            #img_cut = cv2.line(self.line, self.koords[0], self.koords[1], [0,0,0], abs(dist))
+            
+        return img_cut #cv2.cvtColor(img_cut, cv2.COLOR_BGR2GRAY)
             
 
 class FindDirection(FrameObject):
@@ -250,6 +255,7 @@ class FindDirection(FrameObject):
         self.only_straight = []
         self.koords_hor = []
         self.res_text = ""
+        self.counter = 0
         self.ubers =    {
             0 : "straight",
             1 : "left", 
@@ -267,6 +273,9 @@ class FindDirection(FrameObject):
         #TODO rename
         self.frame = frame
         self.koords = frame.koords
+
+    def add_one_counter(self):
+        self.counter = self.counter+1
 
     def find_nearest_line(self):
         '''
@@ -312,7 +321,7 @@ class FindDirection(FrameObject):
             #xposition where img is white/black at top
             on2 = np.where(one2==True)
             on3 = np.where(one3==True)
-            if len(on2[0]) <= 2 and len(on3[0] <= 2): 
+            if len(on2[0]) < 2 and len(on3[0] < 2): #TODO maybe <=2
                 self.only_straight.append(1)  
             else:
                 self.only_straight.append(0)
@@ -330,7 +339,7 @@ class FindDirection(FrameObject):
                 for i in range(0,len(cnts)):
                     # Calculate the bounding rectangle of the contour
                     x, y, w, h = cv2.boundingRect(cnts[i])
-                    if w/h > 0.75: # bevor it was 1
+                    if w/h > 0.85: # bevor it was 1
                         self.frame.show = cv2.drawContours(self.frame.show, cnts, i, [255,0,0], 2)
                         cnts_idx.append(i)
                 
@@ -342,7 +351,7 @@ class FindDirection(FrameObject):
                     self.koords_hor.append(cent)
                 #check if koords_hor ist left or right from the middle or both 
                 if len(self.koords_hor) == 1:
-                    if self.koords_hor[0][0] < (self.koords[0][0]+self.koords[1][0])/2:
+                    if self.koords_hor[0][0] < (self.koords[0][0]+self.koords[1][0])/2: #TODO maybe take only the lower koords
                         #left is one
                         self.dist.append(self.frame.height-self.koords_hor[0][1])
                         if self.only_straight[-1] == 1 and self.only_straight[-2] == 1 and self.only_straight[-3] == 1:
@@ -378,15 +387,24 @@ class FindDirection(FrameObject):
     
     
     def smooth_output(self):
-        if len(self.output) > 3:
-            if self.output[-1] == self.output[-2]:
-                self.res_text = self.ubers[self.output[-1]]
-            elif self.output[-1] != self.output[-2]: 
-                self.res_text = self.ubers[self.output[-3]]
-            elif self.output[-1] == self.output[-3]:
-                self.res_text = self.ubers[self.output[-1]]
-        self.res_text = self.res_text + str(self.dist[-1])
-        return self.res_text
+        if self.counter%5 == 0:
+            print(f"modulo {self.counter}")
+
+            if len(self.output) > 3:
+                if self.output[-1] == self.output[-2]:
+                    self.res_text = self.ubers[self.output[-1]]
+                elif self.output[-1] != self.output[-2]: 
+                    self.res_text = self.ubers[self.output[-3]]
+                elif self.output[-1] == self.output[-3]:
+                    self.res_text = self.ubers[self.output[-1]]
+        #when straight then no distance output
+        #self.res_text = self.ubers[self.output[-1]]
+        if self.res_text == "straight" or self.res_text == "no orientation line":
+            return self.res_text
+        else:
+            return self.res_text+ str(self.dist[-1])
+            
+
     
     def get_ubers(self):
         return self.ubers

@@ -65,15 +65,24 @@ while video.isOpened():
         img_line = cv2.line(c_new, koords[0], koords[1], [0,0,0], 7)
         frame_show = cv2.line(frame_show, koords[0], koords[1], [0,0,0], 7)
         return img_line, frame_show, koords
-    
+
     img_line, frame_show, koords = build_center_line(img_cont, frame_show, frame_height)
     
-    
+    # black = np.zeros(np.shape(frame),dtype='uint8')
+    # black_new = cv2.line(black,koords[0],koords[1], [255,255,255],1)
+    # cnts, _ = cv2.findContours(black_new, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # rect = cv2.minAreaRect(cnts[0])
+    # box = cv2.boxPoints(rect)
+    # box = np.int0(box) 
+    # black_new = cv2.drawContours(black_new,[box],0,(0,0,255),2)
+
+
+
     canny = cv2.Canny(img_line, 0, 0)
     img_cut = img_line.copy() 
 
     # check for zeroes at bottom of frame to find line from canny 
-    def make_block_over_center_line(canny,img_cut, frame_height):
+    def make_block_over_center_line(canny,img_cut, frame_height, koords):
         one = canny[frame_height-10,:] > 0
         #xposition where img is white at bottom
         on = np.where(one==True)
@@ -85,7 +94,9 @@ while video.isOpened():
         # check that are enough space to the edge of frame
         if len(on[0]) >= 2 and on[0][0] > dist_min and on[0][-1] < (frame_height-dist_min):
             #make black in line 
-            img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
+            #img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
+            dist = (on[0][0]-10)-(on[0][-1]+10)
+            img_cut = cv2.line(img_cut, koords[0], koords[1], [0,0,0], abs(dist))
 
         else: 
             offset_line_canny = int(frame_height * 0.2) #for horizontal video offset 0.8
@@ -98,9 +109,11 @@ while video.isOpened():
                 one = canny[ycheck,:] > 0
                 on = np.where(one==True)
                 ycheck = ycheck - offset_line_canny  
-            img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
+            #img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
+            dist = (on[0][0]-10)-(on[0][-1]+10)
+            img_cut = cv2.line(img_cut, koords[0], koords[1], [0,0,0], abs(dist))
         return img_cut
-    img_cut = make_block_over_center_line(canny, img_cut, frame_height)
+    img_cut = make_block_over_center_line(canny, img_cut, frame_height, koords)
     
     # find contours after making the straight line black
     # with these contours we check where we can go
@@ -147,7 +160,7 @@ while video.isOpened():
             for i in range(0,len(cnts)):
                 # Calculate the bounding rectangle of the contour
                 x, y, w, h = cv2.boundingRect(cnts[i])
-                if w/h > 1:
+                if w/h > 0.85:
                     new = cv2.drawContours(new, cnts, i, [255,0,0], 2)
                     frame_show = cv2.drawContours(frame_show, cnts, i, [255,0,0], 2)
                     cnts_idx.append(i)
