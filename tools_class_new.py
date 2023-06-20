@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pyttsx3
 import sys
-import re
 
 def read_video_frames(video_path):
     """function to read in video frame by frame and save it in a list with an index"""
@@ -444,27 +443,26 @@ class FindDirection(FrameObject):
     def get_ubers(self):
         return self.ubers
 
-def audio_output(value):
+def audio_output(value, standard1_str_= str("Eine Kreuzung wurde dedektiert!"), standard2_str_= str("Sie haben folgende Abbiegemöglichkeiten:")):
     '''
         Outputs a given Value(Numbers and Letters possible) as audio
     '''
+    # Initialize the text-to-speech engine
     engine = pyttsx3.init()
+
     # Convert the new value to a readable string
-    #value_str = str(value)
-    output_str = re.sub(r'\d+', '', str(value))
+    value_str = str(value)
 
     # Configure voice properties
-    engine.setProperty('rate', 140)  # Speed of the speech output
+    engine.setProperty('rate', 150)  # Speed of the speech output
     engine.setProperty('volume', 0.9)  # Volume of the speech output
+
     # Output the standartised first words
-    if output_str == "straight":
-        engine.say(output_str)
-    elif output_str == "left" or output_str == "right" :
-        new_output_str = "walking options: "+ output_str +" and straight"
-        engine.say(new_output_str)
+    engine.say(standard1_str_)
+    engine.say(standard2_str_)
     # Output the new value as audio
+    engine.say(value_str)
     engine.runAndWait()
-    
 
 class Segmentation:
     
