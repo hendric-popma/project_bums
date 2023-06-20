@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pyttsx3
 import sys
+import re
 
 def read_video_frames(video_path):
     """function to read in video frame by frame and save it in a list with an index"""
@@ -451,17 +452,21 @@ def audio_output(value, standard1_str_= str("Eine Kreuzung wurde dedektiert!"), 
     engine = pyttsx3.init()
 
     # Convert the new value to a readable string
-    value_str = str(value)
+    #value_str = str(value)
+    output_str = re.sub(r'\d+', '', str(value))
 
     # Configure voice properties
     engine.setProperty('rate', 150)  # Speed of the speech output
     engine.setProperty('volume', 0.9)  # Volume of the speech output
 
-    # Output the standartised first words
-    engine.say(standard1_str_)
-    engine.say(standard2_str_)
+    if output_str == "straight" or output_str == "nearset line is left" or output_str == "nearset line is right":
+        engine.say(output_str)
+    elif output_str == "left" or output_str == "right" :
+        new_output_str = "walking options: "+ output_str +" and straight"
+        engine.say(new_output_str)
+
     # Output the new value as audio
-    engine.say(value_str)
+    #engine.say(value_str)
     engine.runAndWait()
 
 class Segmentation:
