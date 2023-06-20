@@ -80,7 +80,7 @@ The code pass the FrameObject to the DirectionObject. After that it checks where
 
 At the end, the image will be shown. When the last frame of the video was processed and shown, the window closed and the video will be released.
 
-```pyton
+```python
     cv2.imshow('Processed Frame',frame_show)
 
     # Check for key press to exit
