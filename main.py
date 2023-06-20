@@ -1,5 +1,5 @@
 import cv2
-from tools_class import user_input, FrameObject, FindDirection, Segmentation
+from tools import user_input, FrameObject, FindDirection, Segmentation
 
 # Open the video file
 video, line_color, total_frames = user_input()
