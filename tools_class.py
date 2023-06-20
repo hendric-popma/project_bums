@@ -212,9 +212,10 @@ class FrameObject:
         #find center of both halfs
         c_black_up, koords_up = self.find_center_plot(black_up)
         c_black_down, koords_down = self.find_center_plot(black_down)
+        self.koords_down = koords_down
         # if koords are center koords take the koords from the "run" before
         
-        if len(self.koords) > 0: #TODO check if necessary #otherwise error in first run
+        if len(self.koords) > 0: 
             if koords_up == [int(val/2) for val in list(img_cont.shape[:2])]: #frame 
                 koords_up = self.koords[0]
             if koords_down == [int(val/2) for val in list(img_cont.shape[:2])]:
@@ -312,15 +313,17 @@ class FindDirection(FrameObject):
 
         Output: None for "On line" , 111 for "nearest line is left" or 222 for "nearest line is rigth"
         '''
+        if self.frame.koords_down[0] is None:
+            return
+        x_value = self.frame.koords_down[0]
+        
         w = self.frame.width
         h = self.frame.height
         white_pixels = 0
         for y in range(h-10,h):
             white_line = np.count_nonzero(img_cont[y] == 255)
             white_pixels = white_pixels + white_line
-
         if white_pixels <= 210:   # when True possibility is heigh, that the line comes from on sid into the picture
-            x_value = self.koords[1][0]
             sections = w*(1/7)
 
             if 2*sections < x_value < 5*sections:
@@ -332,6 +335,8 @@ class FindDirection(FrameObject):
             elif x_value >= 5*sections:
                 #nearest line is right
                 self.output.append(222)
+        else: 
+            self.output.append(0)
         return
     
 
