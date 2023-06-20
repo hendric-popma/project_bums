@@ -22,7 +22,7 @@ Bevor you can start with the example, download a test videos from the cloud:
 
 [download_here](https://drive.google.com/drive/folders/1BDMWk-mU7YQDCDMTNvrdcFH8DbeT5F-C?usp=sharing)
 
-The following example can be found in 'main.py'
+The following example can be found in `main.py`
 
 
 First the code ask the user for the path of the video and the color of the guiding line. After that, an FindDirectionObject ist going to be initialized. 
