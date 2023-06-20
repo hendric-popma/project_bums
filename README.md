@@ -1,7 +1,7 @@
 # project_bums:    Visual Impairment Support
 
 <p align="center">
-<img src="https://upload.wikimedia.org/wikipedia/de/thumb/d/dc/Hs-kempten-logo.svg/1200px-Hs-kempten-logo.svg.png" width="200" height="150" />
+    <img src="https://upload.wikimedia.org/wikipedia/de/thumb/d/dc/Hs-kempten-logo.svg/1200px-Hs-kempten-logo.svg.png" width="200" height="150" />
 </p>
 
 
