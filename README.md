@@ -95,7 +95,7 @@ cv2.destroyAllWindows()
 ```
 
 ## Documentation
-will be added later
+We did not have time to create a documentation yet, but there is a presentation about the project. You can find it [here]()
 
 ## Thanks
 
