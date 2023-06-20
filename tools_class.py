@@ -71,6 +71,27 @@ def user_input():
             print("Are you serious?")
     return video, line_color, total_frames
 
+def audio_output(value, standard1_str_= str("Eine Kreuzung wurde dedektiert!"), standard2_str_= str("Sie haben folgende Abbiegemöglichkeiten:")):
+    '''
+        Outputs a given Value(Numbers and Letters possible) as audio
+    '''
+    # Initialize the text-to-speech engine
+    engine = pyttsx3.init()
+
+    # Convert the new value to a readable string
+    value_str = str(value)
+
+    # Configure voice properties
+    engine.setProperty('rate', 150)  # Speed of the speech output
+    engine.setProperty('volume', 0.9)  # Volume of the speech output
+
+    # Output the standartised first words
+    engine.say(standard1_str_)
+    engine.say(standard2_str_)
+    # Output the new value as audio
+    engine.say(value_str)
+    engine.runAndWait()
+
 class FrameObject:
 
     def __init__(self, frame):
@@ -438,32 +459,11 @@ class FindDirection(FrameObject):
             return self.res_text
         else:
             return self.res_text+ " " + str(self.dist[-1])
-                   
 
     
     def get_ubers(self):
         return self.ubers
 
-def audio_output(value, standard1_str_= str("Eine Kreuzung wurde dedektiert!"), standard2_str_= str("Sie haben folgende Abbiegemöglichkeiten:")):
-    '''
-        Outputs a given Value(Numbers and Letters possible) as audio
-    '''
-    # Initialize the text-to-speech engine
-    engine = pyttsx3.init()
-
-    # Convert the new value to a readable string
-    value_str = str(value)
-
-    # Configure voice properties
-    engine.setProperty('rate', 150)  # Speed of the speech output
-    engine.setProperty('volume', 0.9)  # Volume of the speech output
-
-    # Output the standartised first words
-    engine.say(standard1_str_)
-    engine.say(standard2_str_)
-    # Output the new value as audio
-    engine.say(value_str)
-    engine.runAndWait()
 
 class Segmentation:
     
