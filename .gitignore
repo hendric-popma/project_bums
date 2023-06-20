@@ -5,5 +5,8 @@ env/
 .DS_Store
 #.py
 __pycache__/
-#videos
+#files and fileformats
+hints.txt
 .MOV
+.mp4
+picture_ppt/
