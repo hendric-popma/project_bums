@@ -1,73 +1,104 @@
-# project_bums
-
-
-# Hyperopt: Distributed Hyperparameter Optimization
+# project_bums:    Visual Impairment Support
 
 <p align="center">
-<img src="https://upload.wikimedia.org/wikipedia/de/thumb/d/dc/Hs-kempten-logo.svg/1200px-Hs-kempten-logo.svg.png" />
+<img src="https://upload.wikimedia.org/wikipedia/de/thumb/d/dc/Hs-kempten-logo.svg/1200px-Hs-kempten-logo.svg.png" width="200" height="150" />
 </p>
 
-[![build](https://github.com/hyperopt/hyperopt/actions/workflows/build.yml/badge.svg)](https://github.com/hyperopt/hyperopt/actions/workflows/build.yml)
-[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/hyperopt/hyperopt/master.svg)](https://results.pre-commit.ci/latest/github/hyperopt/hyperopt/master)
-[![PyPI version](https://badge.fury.io/py/hyperopt.svg)](https://badge.fury.io/py/hyperopt)
-[![Anaconda-Server Badge](https://anaconda.org/conda-forge/hyperopt/badges/version.svg)](https://anaconda.org/conda-forge/hyperopt)
 
-[Hyperopt](https://github.com/hyperopt/hyperopt) is a Python library for serial and parallel optimization over awkward
-search spaces, which may include real-valued, discrete, and conditional
-dimensions.
-
+[project_bums]() is a Python library for visual impairment support for better navigation in public places with existing guiding lines
 ## Getting started
 
-Install hyperopt from PyPI
+In order to run the code you need at least Python Version 3.10.0.
+It's recommended to install all dependencies in a virtual enviroment.
 
-```bash
-pip install hyperopt
-```
+To install all requirements run:
 
-to run your first example
+`pip install -r requirements.txt`
+
+
+## Example
+
+Bevor you can start with the example, download a test videos from the cloud:
+
+[download_here](https://drive.google.com/drive/folders/1BDMWk-mU7YQDCDMTNvrdcFH8DbeT5F-C?usp=sharing)
+
+The following example can be found in 'main.py'
+
+
+First the code ask the user for the path of the video and the color of the guiding line. After that, an FindDirectionObject ist going to be initialized. 
+
 
 ```python
-# define an objective function
-def objective(args):
-    case, val = args
-    if case == 'case 1':
-        return val
-    else:
-        return val ** 2
+import cv2
+from tools import user_input, FrameObject, FindDirection, Segmentation
 
-# define a search space
-from hyperopt import hp
-space = hp.choice('a',
-    [
-        ('case 1', 1 + hp.lognormal('c1', 0, 1)),
-        ('case 2', hp.uniform('c2', -10, 10))
-    ])
-
-# minimize the objective over the space
-from hyperopt import fmin, tpe, space_eval
-best = fmin(objective, space, algo=tpe.suggest, max_evals=100)
-
-print(best)
-# -> {'a': 1, 'c2': 0.01420615366247227}
-print(space_eval(space, best))
-# -> ('case 2', 0.01420615366247227}
+# Open the video file
+video, line_color, total_frames = user_input()
+# init class/values for while loop
+direct = FindDirection()
 ```
 
-## Algorithms
+Then the code loops through the video. With every frame a FrameObject is going to be initialized. 
+```python
+#loop through all frames of video
+while video.isOpened():
+    #Read a single frame
+    ret, frame = video.read()
+    if not ret:
+        print("Error load frame")
+        break
+    
+    #Create a Frame Object
+    frame = FrameObject(frame)
+    #get image from FrameObject
+    img = frame.img
+```
 
+After that it creates a SegmentationObject. With the function 'get_orientation_lines', the guide line will be segmentated. The segmented image is going to be passed to the FrameObject. We prepare the image tio find the direction.
+
+```python
+    #Create Segmemtation Object  
+    seg = Segmentation(frame, line_color)
+    #get the orientation line
+    img_seg = seg.get_orientation_lines()
+    frame.build_center_line(img_seg)
+    #used later to find the directions
+    img = frame.make_block_over_center_line()
+```
+The code pass the FrameObject to the DirectionObject. After that it checks where to go. Then the Text will be printed in the image.
+
+```python
+    # Get Values from FrameObject to Direction Object
+    direct.get_values_from_frame_object(frame)
+    direct.wait_for_complete_contour(img)
+    direct.find_nearest_line(img_seg)
+    direct.check_where_to_go()
+    res_text = direct.smooth_output()
+    frame.text_in_frame(res_text)
+    frame_show = frame.overlay_segmentation(img_seg)
+```
+
+At the end, the image will be shown. When the last frame of the video was processed and shown, the window closed and the video will be released.
+
+```pyton
+    cv2.imshow('Processed Frame',frame_show)
+
+    # Check for key press to exit
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+    if video.get(cv2.CAP_PROP_POS_FRAMES) == total_frames:
+        break
+    
+# Release the video objects and close the windows
+video.release()
+cv2.destroyAllWindows()
+```
 
 ## Documentation
-
-
-
-## Related Projects
-
-
-## Examples
-
-## Cite
+will be added later
 
 ## Thanks
 
 This project has received support from
+
 
