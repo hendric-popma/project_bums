@@ -154,8 +154,8 @@ class FrameObject:
         """
         # Define the text and its properties
         font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 1.5
-        thickness = 4
+        font_scale = 1.2 #bevor 1.5
+        thickness = 3
         color = (255, 0, 255)  # Green color in BGR format
 
         # Get the text size
@@ -434,10 +434,10 @@ class FindDirection(FrameObject):
         #when straight then no distance output
         #self.res_text = self.ubers[self.output[-1]]
         self.add_one_counter() 
-        if self.res_text == "straight" or self.res_text == "no orientation line":
+        if self.res_text == "straight" or self.res_text == "no orientation line" or self.res_text == "nearset line is left" or self.res_text=="nearset line is right":
             return self.res_text
         else:
-            return self.res_text+ str(self.dist[-1])
+            return self.res_text+ " " + str(self.dist[-1])
                    
 
     

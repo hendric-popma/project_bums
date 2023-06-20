@@ -10,7 +10,7 @@ plt.gray()
 
 video, line_color, total_frames = user_input()
 
-#video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/muenchen7.mp4")
+#video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/muenchen5.mp4")
 #video = cv2.VideoCapture("/Users/hendricpopma/Documents/Uni/Uni_6_Sem/Bums/test_videos/kempten1.MOV")
 
 # declare some list and start values which are needed

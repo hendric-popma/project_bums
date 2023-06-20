@@ -5,7 +5,6 @@ from tools_class import user_input, FrameObject, FindDirection, Segmentation
 video, line_color, total_frames = user_input()
 # init class/values for while loop
 direct = FindDirection()
-
 #loop through all frames of video
 while video.isOpened():
     #Read a single frame
@@ -18,12 +17,10 @@ while video.isOpened():
     frame = FrameObject(frame)
     #get image from FrameObject
     img = frame.img
-
     #Create Segmemtation Object  
     seg = Segmentation(frame, line_color)
     #get the orientation line
     img_seg = seg.get_orientation_lines()
-
     frame.build_center_line(img_seg)
     #used later to find the directions
     img = frame.make_block_over_center_line()
@@ -45,6 +42,7 @@ while video.isOpened():
         break
     if video.get(cv2.CAP_PROP_POS_FRAMES) == total_frames:
         break
+    
 # Release the video objects and close the windows
 video.release()
 cv2.destroyAllWindows()
