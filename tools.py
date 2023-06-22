@@ -136,7 +136,8 @@ class FrameObject:
             cX = int(m["m10"] / m["m00"])
             cY = int(m["m01"] / m["m00"])
         except ZeroDivisionError:
-            print("zero division error")
+            #print("zero division error")
+            # TODO make logging
             return img, [int(val/2) for val in list(img.shape[:2])] # use koords of center from image 
         center_koords =  [cX,cY]
         img_res = cv2.circle(img, (cX, cY),10, [0,0,255], cv2.FILLED)
@@ -289,8 +290,8 @@ class FindDirection(FrameObject):
             11 : "only left", 
             22: "only right", 
             33 : "only left and right",
-            111 : "nearset line is left",
-            222 : "nearset line is right", 
+            111 : "nearest line is left",
+            222 : "nearest line is right", 
         }
 
     def get_values_from_frame_object(self,frame:FrameObject):
