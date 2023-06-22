@@ -135,7 +135,8 @@ class FrameObject:
             cX = int(m["m10"] / m["m00"])
             cY = int(m["m01"] / m["m00"])
         except ZeroDivisionError:
-            print("zero division error")
+            #print("zero division error")
+            # TODO make logging
             return img, [int(val/2) for val in list(img.shape[:2])] # use koords of center from image 
         center_koords =  [cX,cY]
         img_res = cv2.circle(img, (cX, cY),10, [0,0,255], cv2.FILLED)
