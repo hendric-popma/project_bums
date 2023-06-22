@@ -289,8 +289,8 @@ class FindDirection(FrameObject):
             11 : "only left", 
             22: "only right", 
             33 : "only left and right",
-            111 : "nearset line is left",
-            222 : "nearset line is right", 
+            111 : "nearest line is left",
+            222 : "nearest line is right", 
         }
 
     def get_values_from_frame_object(self,frame:FrameObject):
