@@ -73,32 +73,25 @@ def user_input():
 
 def audio_output(value):
     '''
-        Outputs a given Value(Numbers and Letters possible) as audio
+    Outputs a given Value(Numbers and Letters possible) as audio
     '''
     # Initialize the text-to-speech engine
     engine = pyttsx3.init()
 
     # Convert the new value to a readable string
     output_str = re.sub(r'\d+', '', str(value))
-    #print('output_str', output_str)
 
     # Configure voice properties
-    engine.setProperty('rate', 150)  # Speed of the speech output
+    engine.setProperty('rate', 180)  # Speed of the speech output
     engine.setProperty('volume', 0.9)  # Volume of the speech output
 
-    # Output the standartised first words
-    # if output_str == "straight" or output_str == "nearset line is left" or output_str == "nearset line is right" or output_str == "no orientation line":
-    #     print('final_out', output_str)
-    engine.say(output_str)
-    # elif output_str == "only left" or output_str == "only right" or output_str == "only left and right":
-    #     final_output_str = "walking options: "+ output_str 
-    #     engine.say(final_output_str)
-    # elif output_str == "left" or output_str == "right" or output_str == "left and right":
-    #     final_output_str = "walking options: "+ output_str +" and straight"
-    #     print('final_str', final_output_str)
-    #     engine.say(final_output_str)
-    # Output the new value as audio
-    #engine.say(output_str)
+    #Check whether string for a turn or not?
+    if output_str == "straight" or output_str == "no orientation line" or output_str == "nearest line is left " or output_str == "nearest line is right ":
+        engine.say(output_str)
+    else:
+        final_output_str = "walking options: "+ output_str 
+        engine.say(final_output_str)
+
     engine.runAndWait()
 
 class FrameObject:
@@ -489,11 +482,11 @@ class Segmentation:
         
     def grayscale_values(self,img, y_position):
         '''
-            returns a list with all gray_values found along a horizontal line
+        returns a list with all gray_values found along a horizontal line
 
-            Args:
-                image: Imput image (grayscale)
-                y_position: y_koordinat of the horizontal line
+        Args:
+            image: Imput image (grayscale)
+            y_position: y_koordinat of the horizontal line
         '''
         # Initialize x-axis and grayscale values
         x_values = np.arange(img.shape[1])
