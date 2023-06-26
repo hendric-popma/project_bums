@@ -189,10 +189,10 @@ class FrameObject:
     
     def overlay_segmentation(self, seg_image, color=(0, 255, 255), alpha=0.25):
         '''
-            Draws the segmented areas into the original picture as a yellow transparent area.
-        TODO better description
-            Input: original_image, segmented_image, Color (default: yellow), Transparency (default: 0.25)
-            Output: Picture with blue transparent orientation lines
+        Draws the segmented areas into the original picture as a yellow transparent area.
+    
+        Args: original_image, segmented_image, Color (default: yellow), Transparency of the area (default: 0.25)
+        Output: Picture with yellow transparent orientation lines
         '''
         # Create a copy of the original image
         overlay = self.show.copy()
