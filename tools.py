@@ -39,10 +39,13 @@ def user_input():
     reads in the video file
     user gives video file over path and decide if the line is black or white
 
-    return:
+    Returns:
         video   cv2.VideoCapture Object
         line_color  string W or B 
+        total_frames    Value to stop automatic
     """
+
+    # user input with function to break out of the programm
     while True:
         try:
             path = input("please enter the path to the video, exit with q: ")
@@ -60,6 +63,7 @@ def user_input():
     if path == "q":
         sys.exit()
 
+    #user input for line color
     while True:
         line_color = input("Please enter the color of the line. Choose between black(b) or white(w): ").upper()
         
@@ -102,16 +106,24 @@ class FrameObject:
         self.line = 0 # used later
     
     def get_frame_img(self):
+        """
+            function to get the image
+        """
         return self.frame
     
     def canny_zero_line(self):
+        """returns an image with canny used at the orientation line"""
         self.canny = cv2.Canny(self.line, 0, 0)
         return self.canny
 
     def calc_line_koords(self, x1,y1,x2,y2): 
         '''
             function to calaculate line between two points
-            returns the koordinates to plot the line 
+            Parameters:
+
+            
+            Returns:
+                koords  koordinates to plot the center line 
         '''
         limits = [0,self.height]
         #to get NO ZeroDivisionError
@@ -119,6 +131,7 @@ class FrameObject:
             resx = 1
         else: 
             resx = x2-x1
+        #calculate the line  
         m = (y2-y1)/(resx)
         b = y1 - m * x1
         gerade = list(map(lambda y: int((y-b)/m), limits))
@@ -128,7 +141,13 @@ class FrameObject:
     def find_center_plot(self, img):
         '''
         finds the center of a image with white contour on black 
-        returns the new image and koords(x/y) of the center 
+        
+        Parameters:
+            img     image where to find the center plot
+        
+        Returns:
+            img_res     image where the koords are drawn
+            center_koords   koordinates of the center (x/y)
         '''
         m = cv2.moments(img)
         try:
@@ -144,8 +163,13 @@ class FrameObject:
 
     def find_max_contour(img):
         """
-            function to find the biggest contour (area)
-            return new binary image with filled contour 
+            Find the biggest contour (area)
+            
+            Parameters:
+                img   image  
+            
+            Returns:
+                ret_img     new binary image with filled contour 
         """
         cnts, hierachy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         out = np.zeros(np.shape(img), dtype='uint8')
@@ -160,6 +184,13 @@ class FrameObject:
     def thresh_gauss(img):
         """
         makes gauss and auto threshold
+
+        Parameters: 
+            img     image in RGB
+
+        Returns: 
+            seg     segmentation of input imaga
+
         """
         #convert to grayscale 
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -170,8 +201,13 @@ class FrameObject:
 
     def text_in_frame(self, text:str):
         """
-        puts the text in the middel of an image
-        returns the new image 
+        puts the text in the middle of an image
+        Parameters:
+            text : string        
+                text to put in image
+
+        Returns:
+            self.show    the new image 
         """
         # Define the text and its properties
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -203,22 +239,29 @@ class FrameObject:
         return self.show
     
 
-    def build_center_line(self,img_cont):
+    def build_center_line(self,img):
+        """
+        creates the black center line on top of the orientation line
+            Parameters:
+                img     image
+            Returns:
+
+        """
+
         self.koords = []
         cut = int(6/9 * self.height) # bevor 3/5
-        black_up = img_cont[:cut,:]
-        black_down = img_cont[cut:,:]
+        black_up = img[:cut,:]
+        black_down = img[cut:,:]
 
         #find center of both halfs
         c_black_up, koords_up = self.find_center_plot(black_up)
         c_black_down, koords_down = self.find_center_plot(black_down)
         self.koords_down = koords_down
         # if koords are center koords take the koords from the "run" before
-        
         if len(self.koords) > 0: 
-            if koords_up == [int(val/2) for val in list(img_cont.shape[:2])]: #frame 
+            if koords_up == [int(val/2) for val in list(img.shape[:2])]: #frame 
                 koords_up = self.koords[0]
-            if koords_down == [int(val/2) for val in list(img_cont.shape[:2])]:
+            if koords_down == [int(val/2) for val in list(img.shape[:2])]:
                 koords_down = self.koords[1]
         
         
@@ -233,7 +276,11 @@ class FrameObject:
 
     def make_block_over_center_line(self):
         """
-        check for zeroes at bottom of frame to find line from canny 
+        creates a black block over the segmentation line
+        width plus an auto offset and then the block goes straight up 
+
+        Returns:
+            img_cut     image with black block 
         """
         img_cut = self.line.copy()
         canny = self.canny_zero_line()
@@ -241,36 +288,32 @@ class FrameObject:
         #xposition where img is white at bottom
         on = np.where(one==True)
 
-        # TODO make smarter  
         # make black line over the big white straight line (vertical)
         # if no line at bottom go up until line was found   
         dist_min = self.height*0.1
         # check that are enough space to the edge of frame
         if len(on[0]) >= 2 and on[0][0] > dist_min and on[0][-1] < (self.height-dist_min):
             #make black in line 
-            #dist = (on[0][0]-10)-(on[0][-1]+10)
-            #img_cut = cv2.line(self.line, self.koords[0], self.koords[1], [0,0,0], abs(dist))
-            img_cut[:,on[0][0]-10:on[0][-1]+10] = 0 #bevor 5 ->10
+            img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
 
         else: 
-            offset_line_canny = int(self.height * 0.2) #for horizontal video offset 0.8
+            offset_line_canny = int(self.height * 0.2) 
             ycheck = self.height-offset_line_canny
             # put y position up as long there is no white space found
             while len(on[0]) == 0:
-                #ycheck cannot be smaller than = otherwise it isnt in the picture range of y-axis
+                #ycheck cannot be smaller than 0 otherwise it isnt in the picture range of y-axis
                 if ycheck <=0:
                     return
                 one = self.canny[ycheck,:] > 0
                 on = np.where(one==True)
                 ycheck = ycheck - offset_line_canny  
-            img_cut[:,on[0][0]-10:on[0][-1]+10] = 0 # bevor 5 -> 10
-            #dist = (on[0][0]-10)-(on[0][-1]+10)
-            #img_cut = cv2.line(self.line, self.koords[0], self.koords[1], [0,0,0], abs(dist))
+            img_cut[:,on[0][0]-10:on[0][-1]+10] = 0
             
-        return img_cut #cv2.cvtColor(img_cut, cv2.COLOR_BGR2GRAY)
+        return img_cut
             
 
 class FindDirection(FrameObject):
+    
     def __init__(self):
         self.output = [0]
         self.dist = [0]
@@ -294,24 +337,26 @@ class FindDirection(FrameObject):
         }
 
     def get_values_from_frame_object(self,frame:FrameObject):
-        #TODO rename
+        """puts values from Class FrameObject to Class FindDirection"""
         self.frame = frame
         self.koords = frame.koords
 
     def add_one_counter(self):
+        """class counter add one"""
         self.counter = self.counter+1
     
     def find_nearest_line(self, img_cont):
+#TODO check description
         '''
         Looks for the section in which the koords are located,
         allowing us to determine if we are already on the orientation line
         or if the nearest line is to the left or right of us.
 
-        Args: 
+        Parameters: 
             koords: Koordinates of the segmentated center of the lower section
             seg_image: The segmented image of the orientation line.
-
-        Output: None for "On line" , 111 for "nearest line is left" or 222 for "nearest line is rigth"
+    
+        Returns: None for "On line" , 111 for "nearest line is left" or 222 for "nearest line is rigth"
         '''
         if self.frame.koords_down[0] is None:
             return
@@ -342,7 +387,12 @@ class FindDirection(FrameObject):
 
     def wait_for_complete_contour(self, img):
         """
-        delay the direction-decision until contours are complete in image
+        delay the direction decision until contours are complete in image
+        Parameters: 
+            img     input image binary
+        Returns:
+
+
         """
         if self.wait is None: 
             self.wait = 0
@@ -361,7 +411,10 @@ class FindDirection(FrameObject):
         return self.cnts, self.wait 
 
     def check_where_to_go(self):
-
+        """
+        checks in which direction it is possible to go
+        """
+        #check if a fkt is used bevor which es needed
         if self.wait is None:
             print("use fkt waiting before")
             return
@@ -382,15 +435,17 @@ class FindDirection(FrameObject):
             else:
                 self.only_straight.append(0)
 
+            
             if self.wait <2:
                 # check for zeroes at bottom of frame to find line from canny 
-                if self.only_straight[-1] == 1 and self.only_straight[-2] == 1:# and self.only_straight[-3] == 1:
+                if self.only_straight[-1] == 1 and self.only_straight[-2] == 1:
                     self.output.append(4)
                 else:
                     self.output.append(0)
                 self.dist.append("")
-            if self.wait > 2:
-                
+
+            # wait >2 areas to go left or right area found
+            if self.wait > 2: 
                 cnts_idx = []
                 for i in range(0,len(self.cnts)):
                     # Calculate the bounding rectangle of the contour
@@ -398,8 +453,7 @@ class FindDirection(FrameObject):
                     if w/h > 0.85: # bevor it was 1
                         self.frame.show = cv2.drawContours(self.frame.show, self.cnts, i, [255,0,0], 2)
                         cnts_idx.append(i)
-                
-
+                #find the center koords of the areas left or right from the orientation line
                 self.koords_hor = []      
                 for i in cnts_idx:
                     _,cent = self.find_center_plot(self.cnts[i])
@@ -423,7 +477,6 @@ class FindDirection(FrameObject):
                         else:
                             self.output.append(2)
                 elif len(self.koords_hor) == 2:
-        #TODO check position of the cnts 
                     if self.koords_hor[0][0] < (self.koords[0][0]+self.koords[1][0])/2 and self.koords_hor[1][0] > (self.koords[0][0]+self.koords[1][0])/2:
                         #left and right is 3
                         self.dist.append(self.frame.height-self.koords_hor[0][1])
@@ -443,13 +496,17 @@ class FindDirection(FrameObject):
     
     
     def smooth_output(self):
+        """
+        smoothes the output and translate the numbers to text 
 
+        Returns:
+            the text to put in the frame
+        """
         if self.res_text is None:
             self.res_text = ""
 
+        # all 5 frames we are calculating a new text
         if self.counter%5 == 0:
-            #print(f"modulo {self.counter}")
-
             if len(self.output) > 3:
                 if self.output[-1] == self.output[-2]:
                     self.res_text = self.ubers[self.output[-1]]
@@ -458,7 +515,6 @@ class FindDirection(FrameObject):
                 elif self.output[-1] == self.output[-3]:
                     self.res_text = self.ubers[self.output[-1]]
         #when straight then no distance output
-        #self.res_text = self.ubers[self.output[-1]]
         self.add_one_counter() 
         if self.res_text == "straight" or self.res_text == "no orientation line" or self.res_text == "nearset line is left" or self.res_text=="nearset line is right":
             return self.res_text
@@ -467,6 +523,7 @@ class FindDirection(FrameObject):
 
     
     def get_ubers(self):
+        """get the dict for text and numbers"""
         return self.ubers
 
 
@@ -479,11 +536,13 @@ class Segmentation:
         
     def grayscale_values(self,img, y_position):
         '''
-            returns a list with all gray_values found along a horizontal line
-
-            Args:
+        makes a list with all gray_values found along a horizontal line        '
+            
+            Parameters:
                 image: Imput image (grayscale)
                 y_position: y_koordinat of the horizontal line
+            Returns: 
+                gray_values
         '''
         # Initialize x-axis and grayscale values
         x_values = np.arange(img.shape[1])
@@ -498,15 +557,19 @@ class Segmentation:
     def find_largest_component(self, img):
         '''
         Find all connected components and search for the largest one.
-        Output: Image with the largest component
+
+        Parameters:
+            img     image where ro find the components
+        Returns: 
+            largest_component_image     image with the largest component
         '''
-        # Find all connected components
+        #Find all connected components
         _ , labels, stats, _ = cv2.connectedComponentsWithStats(img)
 
-        # Find the largest connected component
+        #Find the largest connected component
         largest_component_label = np.argmax(stats[1:, cv2.CC_STAT_AREA]) + 1
 
-        # Create an image that contains only the largest connected component
+        #Create an image that contains only the largest connected component
         largest_component_image = np.zeros_like(img)
         largest_component_image[labels == largest_component_label] = 255
 
@@ -516,12 +579,13 @@ class Segmentation:
         '''
         Applies dilation to the segmented image and returns the largest component.
 
-        Args:
-            image: Input image (grayscale).
-            thresh: Threshold value for binarization.
-            iterations: Number of iterations for dilation.
+        Parameters:
+            img        Input image (grayscale)
+            thresh      Threshold value for binarization
+            iterations      Number of iterations for dilation
 
-        Output: Image with the largest component after dilation.
+        Returns: 
+            img_largest     image with the largest component after dilation
         '''
 
         # Threshold the image to create a binary segmentation
@@ -537,8 +601,14 @@ class Segmentation:
 
     def get_orientation_lines(self, percentage_white=0.2, percentage_black=0.235, region=1/5):
         '''
-        Segments orientation lines from an input image.
-        Output: bw_image with contours of orientation lines
+        #TODO add description for Parameters
+        Segments orientation lines from an input image
+        Parameters:
+            percentage_white
+            percentage_black
+            region
+        Output: 
+            img_out     bw_image with contours of orientation lines
         '''
 
         img_gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
