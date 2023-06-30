@@ -6,7 +6,12 @@ import pyttsx3
 import sys
 
 def read_video_frames(video_path):
-    """function to read in video frame by frame and save it in a list with an index"""
+    """function to read in video frame by frame and save it in a list with an index
+        Parameters: 
+            video_path      path of the video
+        Returns: 
+            frame_list      list with all frames
+    """
     # Create a VideoCapture object
     cap = cv2.VideoCapture(video_path)
 
@@ -120,8 +125,10 @@ class FrameObject:
         '''
             function to calaculate line between two points
             Parameters:
-
-            
+                x1      first x koordinate
+                y1      first y koordinate
+                x2      second x koordinate
+                y2      second y koordinate
             Returns:
                 koords  koordinates to plot the center line 
         '''
@@ -150,12 +157,12 @@ class FrameObject:
             center_koords   koordinates of the center (x/y)
         '''
         m = cv2.moments(img)
+        # check that is no Zero Divison
         try:
             cX = int(m["m10"] / m["m00"])
             cY = int(m["m01"] / m["m00"])
         except ZeroDivisionError:
-            #print("zero division error")
-            # TODO make logging
+            # TODO create logging files
             return img, [int(val/2) for val in list(img.shape[:2])] # use koords of center from image 
         center_koords =  [cX,cY]
         img_res = cv2.circle(img, (cX, cY),10, [0,0,255], cv2.FILLED)
@@ -164,10 +171,8 @@ class FrameObject:
     def find_max_contour(img):
         """
             Find the biggest contour (area)
-            
             Parameters:
                 img   image  
-            
             Returns:
                 ret_img     new binary image with filled contour 
         """
@@ -184,19 +189,18 @@ class FrameObject:
     def thresh_gauss(img):
         """
         makes gauss and auto threshold
-
         Parameters: 
             img     image in RGB
 
         Returns: 
-            seg     segmentation of input imaga
+            seg     segmentation of input image
 
         """
         #convert to grayscale 
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         #gauss 
         gauss = cv2.GaussianBlur(img, None, 10)
-        t, seg = cv2.threshold(gauss,200,1,cv2.THRESH_BINARY+cv2.THRESH_OTSU) #streifen = 200
+        t, seg = cv2.threshold(gauss,200,1,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
         return seg
 
     def text_in_frame(self, text:str):
@@ -205,15 +209,12 @@ class FrameObject:
         Parameters:
             text : string        
                 text to put in image
-
-        Returns:
-            self.show    the new image 
         """
         # Define the text and its properties
         font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 1.2 #bevor 1.5
+        font_scale = 1.2 
         thickness = 3
-        color = (255, 0, 255)  # Green color in BGR format
+        color = (255, 0, 255)
 
         # Get the text size
         (text_width, text_height), _ = cv2.getTextSize(text, font, font_scale, thickness)
@@ -223,16 +224,16 @@ class FrameObject:
     def overlay_segmentation(self, seg_image, color=(0, 255, 255), alpha=0.25):
         '''
             Draws the segmented areas into the original picture as a yellow transparent area.
-        TODO better description
-            Input: original_image, segmented_image, Color (default: yellow), Transparency (default: 0.25)
-            Output: Picture with blue transparent orientation lines
+            Parameters:
+                original_image      original frame (RGB)
+                segmented_image     binary image of orientation line
+                Color
+                Transparency 
         '''
         # Create a copy of the original image
         overlay = self.show.copy()
-
         # Set the color of the area in the overlay image to the specified color (default: yellow)
         overlay[np.where(seg_image)] = color
-
         # Add the overlay image to the original image with transparency
         self.show = cv2.addWeighted(self.show, 1-alpha, overlay, alpha, 0)
 
@@ -244,8 +245,6 @@ class FrameObject:
         creates the black center line on top of the orientation line
             Parameters:
                 img     image
-            Returns:
-
         """
 
         self.koords = []
@@ -346,17 +345,13 @@ class FindDirection(FrameObject):
         self.counter = self.counter+1
     
     def find_nearest_line(self, img_cont):
-#TODO check description
         '''
         Looks for the section in which the koords are located,
         allowing us to determine if we are already on the orientation line
-        or if the nearest line is to the left or right of us.
+        or if the nearest line is to the left or right of us
 
         Parameters: 
-            koords: Koordinates of the segmentated center of the lower section
-            seg_image: The segmented image of the orientation line.
-    
-        Returns: None for "On line" , 111 for "nearest line is left" or 222 for "nearest line is rigth"
+            img_cont    binary of orientation line
         '''
         if self.frame.koords_down[0] is None:
             return
@@ -390,9 +385,6 @@ class FindDirection(FrameObject):
         delay the direction decision until contours are complete in image
         Parameters: 
             img     input image binary
-        Returns:
-
-
         """
         if self.wait is None: 
             self.wait = 0
@@ -498,9 +490,6 @@ class FindDirection(FrameObject):
     def smooth_output(self):
         """
         smoothes the output and translate the numbers to text 
-
-        Returns:
-            the text to put in the frame
         """
         if self.res_text is None:
             self.res_text = ""
@@ -539,9 +528,9 @@ class Segmentation:
         makes a list with all gray_values found along a horizontal line        '
             
             Parameters:
-                image: Imput image (grayscale)
-                y_position: y_koordinat of the horizontal line
-            Returns: 
+                image       Imput image (grayscale)
+                y_position      y_koordinat of the horizontal line
+            Returns:
                 gray_values
         '''
         # Initialize x-axis and grayscale values
@@ -601,13 +590,12 @@ class Segmentation:
 
     def get_orientation_lines(self, percentage_white=0.2, percentage_black=0.235, region=1/5):
         '''
-        #TODO add description for Parameters
         Segments orientation lines from an input image
         Parameters:
-            percentage_white
+            percentage_white    
             percentage_black
             region
-        Output: 
+        Returns: 
             img_out     bw_image with contours of orientation lines
         '''
 
